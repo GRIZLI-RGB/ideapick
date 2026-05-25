@@ -1,4 +1,9 @@
-import { geist } from "@/lib/fonts";
+import { Geist } from "next/font/google";
+
+const geist = Geist({
+	subsets: ["latin", "cyrillic"],
+	variable: "--font-geist",
+});
 
 export default function LoginLayout({ children }: { children: React.ReactNode }) {
 	return (

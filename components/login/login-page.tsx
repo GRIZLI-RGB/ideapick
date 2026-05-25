@@ -16,6 +16,11 @@ const PHASE_LABEL: Record<Phase, string> = {
 	analyzing: "3 · Анализ AI",
 	result: "4 · Вердикт",
 };
+const AUTH_DOT_GRID_STYLE = {
+	backgroundImage:
+		"radial-gradient(circle, rgb(161 161 170 / 0.14) 1.25px, transparent 1.25px)",
+	backgroundSize: "20px 20px",
+} satisfies React.CSSProperties;
 
 export function LoginPage() {
 	const { email, setEmail, loading, sent, signInWithGoogle, sendMagicLink, resetMagicLink } =
@@ -50,7 +55,8 @@ export function LoginPage() {
 		<div className="flex min-h-dvh">
 			<aside className="relative hidden w-[55%] flex-col justify-center overflow-hidden bg-zinc-50 lg:flex">
 				<div
-					className="auth-dot-grid pointer-events-none absolute inset-0 z-0"
+					className="pointer-events-none absolute inset-0 z-0"
+					style={AUTH_DOT_GRID_STYLE}
 					aria-hidden
 				/>
 
