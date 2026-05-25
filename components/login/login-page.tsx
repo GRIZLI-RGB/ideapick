@@ -47,20 +47,24 @@ export function LoginPage() {
 	}
 
 	return (
-		<div className="flex min-h-dvh font-[family-name:var(--font-geist)]">
-			<aside className="relative hidden w-[55%] flex-col justify-center overflow-hidden bg-zinc-50 p-12 lg:flex">
-				<div className="auth-dot-grid pointer-events-none absolute inset-0 opacity-40" />
+		<div className="flex min-h-dvh">
+			<aside className="relative hidden w-[55%] flex-col justify-center overflow-hidden bg-zinc-50 lg:flex">
+				<div
+					className="auth-dot-grid pointer-events-none absolute inset-0 z-0"
+					aria-hidden
+				/>
 
-				<div className="absolute left-12 top-12">
-					<p className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500">
-						Ideapick
-					</p>
-					<h2 className="mt-3 max-w-md text-balance text-2xl font-semibold leading-snug tracking-tight text-zinc-900">
-						От идеи к вердикту, без лишнего шума.
-					</h2>
-				</div>
+				<div className="relative z-10 flex min-h-full w-full flex-col justify-center p-12">
+					<div className="absolute left-12 top-12">
+						<p className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500">
+							Ideapick
+						</p>
+						<h2 className="mt-3 max-w-md text-balance text-2xl font-semibold leading-snug tracking-tight text-zinc-900">
+							От идеи к вердикту, без лишнего шума.
+						</h2>
+					</div>
 
-				<div className="relative mx-auto w-full max-w-md">
+					<div className="relative mx-auto w-full max-w-md">
 					<div className="mb-4 flex items-center justify-between text-xs">
 						<span className="font-medium text-zinc-700">{PHASE_LABEL[phase]}</span>
 						<div className="flex gap-1.5">
@@ -213,6 +217,7 @@ export function LoginPage() {
 							)}
 						</AnimatePresence>
 					</motion.div>
+					</div>
 				</div>
 			</aside>
 
