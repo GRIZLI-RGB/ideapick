@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { BrandMark } from "@/components/brand/brand-mark";
 import { GoogleIcon } from "@/components/login/google-icon";
 import { MOCK_IDEAS, VERDICTS } from "@/components/login/mock-data";
 import { useMockAuth } from "@/components/login/use-mock-auth";
@@ -18,7 +19,7 @@ const PHASE_LABEL: Record<Phase, string> = {
 };
 const AUTH_DOT_GRID_STYLE = {
 	backgroundImage:
-		"radial-gradient(circle, rgb(161 161 170 / 0.14) 1.25px, transparent 1.25px)",
+		"radial-gradient(circle, rgb(161 161 170 / 0.2) 1.25px, transparent 1.25px)",
 	backgroundSize: "20px 20px",
 } satisfies React.CSSProperties;
 
@@ -65,15 +66,6 @@ export function LoginPage() {
 				/>
 
 				<div className="relative z-10 flex min-h-full w-full flex-col justify-center p-12">
-					<div className="absolute left-12 top-12">
-						<p className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500">
-							Ideapick
-						</p>
-						<h2 className="mt-3 max-w-md text-balance text-2xl font-semibold leading-snug tracking-tight text-zinc-900">
-							Проверьте идею до того, как вложите в неё ресурсы
-						</h2>
-					</div>
-
 					<div className="relative mx-auto w-full max-w-md">
 						<div className="mb-4 flex items-center justify-between text-xs">
 							<span className="font-medium text-zinc-700">
@@ -260,8 +252,18 @@ export function LoginPage() {
 				</div>
 			</aside>
 
-			<main className="flex flex-1 items-center justify-center bg-white px-6 py-16">
-				<div className="w-full max-w-[380px]">
+			<main className="flex flex-1 items-center justify-center bg-white px-6 py-12">
+				<div className="w-full max-w-[400px]">
+					<header className="mb-7 text-center">
+						<div className="inline-flex size-14 items-center justify-center rounded-2xl border border-amber-200 bg-amber-50 shadow-sm">
+							<BrandMark size={32} />
+						</div>
+						<h1 className="mt-5 text-balance text-2xl font-bold leading-snug tracking-tight text-zinc-900">
+							Проверьте идею до того, как вложите в неё
+							ресурсы
+						</h1>
+					</header>
+
 					<div className="space-y-3">
 						<button
 							type="button"
@@ -371,7 +373,7 @@ export function LoginPage() {
 						</AnimatePresence>
 					</div>
 
-					<p className="mt-5 text-center text-xs text-zinc-400">
+					<p className="mt-4 text-center text-xs text-zinc-400">
 						Продолжая, вы соглашаетесь с{" "}
 						<Link
 							href="/terms"
