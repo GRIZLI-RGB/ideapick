@@ -377,6 +377,8 @@ export function LoginPage() {
 						Продолжая, вы соглашаетесь с{" "}
 						<Link
 							href="/terms"
+							target="_blank"
+							rel="noopener noreferrer"
 							className="text-zinc-600 underline decoration-zinc-300 underline-offset-2 transition hover:text-zinc-900 hover:decoration-zinc-500"
 						>
 							условиями
@@ -384,6 +386,8 @@ export function LoginPage() {
 						и{" "}
 						<Link
 							href="/privacy"
+							target="_blank"
+							rel="noopener noreferrer"
 							className="text-zinc-600 underline decoration-zinc-300 underline-offset-2 transition hover:text-zinc-900 hover:decoration-zinc-500"
 						>
 							политикой&nbsp;конфиденциальности

@@ -40,7 +40,7 @@ export default function RootLayout({
 	children: React.ReactNode;
 }>) {
 	return (
-		<html lang="ru" className={geist.variable}>
+		<html lang="ru" className={`${geist.variable} scroll-smooth`}>
 			<body className={`${geist.className} min-h-dvh antialiased`}>{children}</body>
 		</html>
 	);
