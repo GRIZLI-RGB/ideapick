@@ -1,17 +1,24 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
 
 export function useMockAuth() {
+	const router = useRouter();
 	const [email, setEmail] = useState("");
 	const [loading, setLoading] = useState<"google" | "magic" | null>(null);
 	const [sent, setSent] = useState(false);
+
+	const goToApp = useCallback(() => {
+		router.push("/app/ideas");
+	}, [router]);
 
 	const signInWithGoogle = useCallback(async () => {
 		setLoading("google");
 		await new Promise((r) => setTimeout(r, 900));
 		setLoading(null);
-	}, []);
+		goToApp();
+	}, [goToApp]);
 
 	const sendMagicLink = useCallback(
 		async (e: React.FormEvent) => {
