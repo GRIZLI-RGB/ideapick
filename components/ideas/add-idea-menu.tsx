@@ -17,14 +17,14 @@ const ITEMS = [
 	{
 		mode: "random" as const,
 		label: "Из каталога",
-		desc: "Случайная готовая идея",
+		desc: "Случайная идея",
 		price: "0 ₽",
 		icon: Shuffle,
 	},
 	{
 		mode: "anamnesis" as const,
 		label: "По анамнезу",
-		desc: "Короткий опрос → AI",
+		desc: "Короткий опрос",
 		price: `${PRICES.anamnesis} ₽`,
 		icon: Sparkles,
 	},
@@ -113,13 +113,7 @@ export function AddIdeaMenu({ variant = "primary" }: AddIdeaMenuProps) {
 										</div>
 										<p className="mt-0.5 text-xs text-stone-500">
 											{item.desc}
-											{item.mode === "random" ? (
-												<span className="text-stone-600">
-													{" "}
-													· осталось {Math.max(0, randomLeft)}/{randomLimit}{" "}
-													сегодня
-												</span>
-											) : null}
+
 										</p>
 									</div>
 								</button>
