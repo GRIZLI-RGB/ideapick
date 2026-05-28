@@ -3,11 +3,10 @@
 import { LoginRightPanel } from "@/components/login/login-right-panel";
 import type { AuthThemeOverlay, LoginAuthTheme } from "@/components/login/login-theme";
 import { LOGIN_AUTH_THEME } from "@/components/login/login-theme";
-import { GoogleIcon } from "@/components/login/google-icon";
 import { MOCK_IDEAS } from "@/components/login/mock-data";
 import { useMockAuth } from "@/components/login/use-mock-auth";
 import { AnimatePresence, motion } from "framer-motion";
-import { Check, Loader2, Mail, Sparkles } from "lucide-react";
+import { Check, Loader2, Sparkles } from "lucide-react";
 import { useEffect, useState } from "react";
 
 type Phase = "input" | "filled" | "analyzing" | "result";
