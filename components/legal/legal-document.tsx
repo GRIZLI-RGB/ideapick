@@ -12,10 +12,10 @@ export function LegalDocument({ sections }: LegalDocumentProps) {
 	return (
 		<div className="space-y-8">
 			<nav
-				className="rounded-xl border border-zinc-200 bg-zinc-50/60 p-4 ring-1 ring-zinc-900/5 sm:p-5"
+				className="rounded-xl border border-stone-700/80 bg-stone-900/80 p-4 ring-1 ring-amber-500/10 sm:p-5"
 				aria-label="Содержание"
 			>
-				<p className="text-xs font-medium uppercase tracking-wide text-zinc-400">
+				<p className="text-xs font-medium uppercase tracking-wide text-stone-500">
 					Содержание
 				</p>
 				<ol className="mt-2.5 space-y-1.5">
@@ -23,7 +23,7 @@ export function LegalDocument({ sections }: LegalDocumentProps) {
 						<li key={section.id}>
 							<a
 								href={`#${section.id}`}
-								className="text-sm leading-snug text-zinc-600 underline decoration-zinc-300 underline-offset-2 transition hover:text-zinc-900 hover:decoration-zinc-500"
+								className="text-sm leading-snug text-stone-400 underline decoration-stone-600 underline-offset-2 transition hover:text-stone-200 hover:decoration-stone-400"
 							>
 								{index + 1}. {section.title}
 							</a>
@@ -39,8 +39,8 @@ export function LegalDocument({ sections }: LegalDocumentProps) {
 						id={section.id}
 						className="scroll-mt-20"
 					>
-						<h2 className="text-lg font-semibold tracking-tight text-zinc-900">
-							<span className="mr-1.5 text-zinc-400">{index + 1}.</span>
+						<h2 className="text-lg font-semibold tracking-tight text-stone-50">
+							<span className="mr-1.5 text-stone-500">{index + 1}.</span>
 							{section.title}
 						</h2>
 						<div className="prose-legal mt-3">{section.content}</div>

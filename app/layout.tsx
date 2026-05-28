@@ -28,7 +28,7 @@ export const metadata: Metadata = {
 			{
 				rel: "mask-icon",
 				url: "/icons/safari-pinned-tab.svg",
-				color: "#000000",
+				color: "#f59e0b",
 			},
 		],
 	},
@@ -41,7 +41,11 @@ export default function RootLayout({
 }>) {
 	return (
 		<html lang="ru" className={`${geist.variable} scroll-smooth`}>
-			<body className={`${geist.className} min-h-dvh antialiased`}>{children}</body>
+			<body
+				className={`${geist.className} min-h-dvh bg-stone-950 text-stone-100 antialiased`}
+			>
+				{children}
+			</body>
 		</html>
 	);
 }

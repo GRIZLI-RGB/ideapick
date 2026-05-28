@@ -1,5 +1,11 @@
 @import "tailwindcss";
 
+@layer base {
+	html {
+		color-scheme: dark;
+	}
+}
+
 @layer components {
 	.prose-legal > * + * {
 		margin-top: 1rem;
@@ -8,7 +14,7 @@
 	.prose-legal p {
 		font-size: 0.875rem;
 		line-height: 1.625;
-		color: var(--color-zinc-600);
+		color: var(--color-stone-400);
 	}
 
 	.prose-legal ul,
@@ -17,7 +23,7 @@
 		padding-left: 1.25rem;
 		font-size: 0.875rem;
 		line-height: 1.625;
-		color: var(--color-zinc-600);
+		color: var(--color-stone-400);
 	}
 
 	.prose-legal ul {
@@ -34,19 +40,21 @@
 
 	.prose-legal strong {
 		font-weight: 600;
-		color: var(--color-zinc-800);
+		color: var(--color-stone-100);
 	}
 
 	.prose-legal a {
-		color: var(--color-zinc-600);
+		color: var(--color-stone-400);
 		text-decoration: underline;
-		text-decoration-color: var(--color-zinc-300);
+		text-decoration-color: var(--color-stone-600);
 		text-underline-offset: 2px;
-		transition: color 0.15s, text-decoration-color 0.15s;
+		transition:
+			color 0.15s,
+			text-decoration-color 0.15s;
 	}
 
 	.prose-legal a:hover {
-		color: var(--color-zinc-900);
-		text-decoration-color: var(--color-zinc-500);
+		color: var(--color-stone-200);
+		text-decoration-color: var(--color-stone-400);
 	}
 }

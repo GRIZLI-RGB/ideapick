@@ -7,8 +7,8 @@ export default function manifest(): MetadataRoute.Manifest {
 		description: "Ideapick",
 		start_url: "/",
 		display: "standalone",
-		background_color: "#ffffff",
-		theme_color: "#ffffff",
+		background_color: "#0c0a09",
+		theme_color: "#0c0a09",
 		icons: [
 			{
 				src: "/icons/icon-192x192.png",
