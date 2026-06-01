@@ -1,7 +1,7 @@
 "use client";
 
+import { HeaderActions } from "@/components/app/header-actions";
 import { AppNav } from "@/components/app/app-nav";
-import { BalanceChip } from "@/components/app/balance-chip";
 import { LogoBrandLink } from "@/components/app/logo-brand-link";
 import { HEADER_SCALE } from "@/lib/app/header-scale";
 import { MOCK_BALANCE } from "@/lib/ideas/mock-data";
@@ -19,9 +19,7 @@ export function AppHeader({ balance = MOCK_BALANCE }: AppHeaderProps) {
 			>
 				<LogoBrandLink />
 				<AppNav />
-				<div className="flex justify-end">
-					<BalanceChip balance={balance} />
-				</div>
+				<HeaderActions balance={balance} />
 			</div>
 		</header>
 	);

@@ -1,6 +1,6 @@
 import type { Idea } from "@/lib/ideas/types";
 
-export const MOCK_BALANCE = 142;
+export const MOCK_BALANCE = 103;
 
 export const CATALOG_POOL: Omit<Idea, "id" | "createdAt">[] = [
 	{

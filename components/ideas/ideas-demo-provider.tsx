@@ -1,6 +1,6 @@
 "use client";
 
-import { RANDOM_DAILY_LIMIT } from "@/lib/ideas/constants";
+import { RANDOM_DAILY_LIMIT, PRICES } from "@/lib/ideas/constants";
 import {
 	ANAMNESIS_RESULT_POOL,
 	CATALOG_POOL,
@@ -14,6 +14,14 @@ import type {
 	SortOption,
 } from "@/lib/ideas/types";
 import {
+	calcTopUpBonus,
+	calcTopUpTotal,
+	TOP_UP_MAX,
+	TOP_UP_MIN,
+} from "@/lib/wallet/bonus";
+import { INITIAL_TRANSACTIONS } from "@/lib/wallet/mock-data";
+import type { Transaction } from "@/lib/wallet/types";
+import {
 	createContext,
 	useCallback,
 	useContext,
@@ -25,6 +33,8 @@ import {
 type IdeasDemoContextValue = {
 	ideas: Idea[];
 	balance: number;
+	transactions: Transaction[];
+	walletOpen: boolean;
 	randomUsedToday: number;
 	randomLimit: number;
 	filter: AnalysisFilter;
@@ -35,6 +45,9 @@ type IdeasDemoContextValue = {
 	setSort: (s: SortOption) => void;
 	openDialog: (mode: AddIdeaMode) => void;
 	closeDialog: () => void;
+	openWallet: () => void;
+	closeWallet: () => void;
+	topUp: (amount: number) => Promise<boolean>;
 	createIdea: (title: string, description: string) => void;
 	addRandomIdea: () => boolean;
 	addAnamnesisIdeas: () => boolean;
@@ -78,6 +91,11 @@ function filterIdeas(ideas: Idea[], filter: AnalysisFilter): Idea[] {
 }
 
 let idCounter = 100;
+let txCounter = 100;
+
+function nextTxId() {
+	return `tx${++txCounter}`;
+}
 
 type IdeasDemoProviderProps = {
 	children: ReactNode;
@@ -86,6 +104,10 @@ type IdeasDemoProviderProps = {
 export function IdeasDemoProvider({ children }: IdeasDemoProviderProps) {
 	const [ideas, setIdeas] = useState<Idea[]>(INITIAL_IDEAS);
 	const [balance, setBalance] = useState(MOCK_BALANCE);
+	const [transactions, setTransactions] = useState<Transaction[]>(
+		INITIAL_TRANSACTIONS,
+	);
+	const [walletOpen, setWalletOpen] = useState(false);
 	const [randomUsedToday, setRandomUsedToday] = useState(1);
 	const [filter, setFilter] = useState<AnalysisFilter>("all");
 	const [sort, setSort] = useState<SortOption>("newest");
@@ -99,21 +121,58 @@ export function IdeasDemoProvider({ children }: IdeasDemoProviderProps) {
 		setTimeout(() => setToast(null), 3200);
 	}, []);
 
-	const createIdea = useCallback((title: string, description: string) => {
-		const idea: Idea = {
-			id: String(++idCounter),
-			title: title.trim(),
-			description: description.trim(),
-			verdict: null,
-			score: null,
-			tag: null,
-			createdAt: new Date().toISOString(),
-			hasAnalysis: false,
-		};
-		setIdeas((prev) => [idea, ...prev]);
-		setActiveDialog(null);
-		showToast("Идея добавлена");
-	}, [showToast]);
+	const appendTransaction = useCallback((tx: Omit<Transaction, "id">) => {
+		setTransactions((prev) => [
+			{ ...tx, id: nextTxId(), createdAt: tx.createdAt ?? new Date().toISOString() },
+			...prev,
+		]);
+	}, []);
+
+	const topUp = useCallback(
+		async (amount: number) => {
+			if (amount < TOP_UP_MIN || amount > TOP_UP_MAX) return false;
+			const bonus = calcTopUpBonus(amount);
+			const total = calcTopUpTotal(amount);
+			await new Promise((r) => setTimeout(r, 700));
+			setBalance((b) => b + total);
+			const label =
+				bonus > 0
+					? `Пополнение · +${bonus} ₽ бонус`
+					: "Пополнение";
+			appendTransaction({
+				kind: "topup",
+				amount: total,
+				label,
+				createdAt: new Date().toISOString(),
+			});
+			showToast(
+				bonus > 0
+					? `Зачислено ${total} ₽ (включая бонус ${bonus} ₽)`
+					: `Зачислено ${total} ₽`,
+			);
+			return true;
+		},
+		[appendTransaction, showToast],
+	);
+
+	const createIdea = useCallback(
+		(title: string, description: string) => {
+			const idea: Idea = {
+				id: String(++idCounter),
+				title: title.trim(),
+				description: description.trim(),
+				verdict: null,
+				score: null,
+				tag: null,
+				createdAt: new Date().toISOString(),
+				hasAnalysis: false,
+			};
+			setIdeas((prev) => [idea, ...prev]);
+			setActiveDialog(null);
+			showToast("Идея добавлена");
+		},
+		[showToast],
+	);
 
 	const addRandomIdea = useCallback(() => {
 		if (randomUsedToday >= RANDOM_DAILY_LIMIT) return false;
@@ -132,8 +191,10 @@ export function IdeasDemoProvider({ children }: IdeasDemoProviderProps) {
 	}, [catalogIdx, randomUsedToday, showToast]);
 
 	const addAnamnesisIdeas = useCallback(() => {
-		if (balance < 49) return false;
-		const template = ANAMNESIS_RESULT_POOL[anamnesisIdx % ANAMNESIS_RESULT_POOL.length];
+		const price = PRICES.anamnesis;
+		if (balance < price) return false;
+		const template =
+			ANAMNESIS_RESULT_POOL[anamnesisIdx % ANAMNESIS_RESULT_POOL.length];
 		setAnamnesisIdx((i) => i + 1);
 		const idea: Idea = {
 			...template,
@@ -141,11 +202,17 @@ export function IdeasDemoProvider({ children }: IdeasDemoProviderProps) {
 			createdAt: new Date().toISOString(),
 		};
 		setIdeas((prev) => [idea, ...prev]);
-		setBalance((b) => b - 49);
+		setBalance((b) => b - price);
+		appendTransaction({
+			kind: "anamnesis",
+			amount: -price,
+			label: "Идея по анамнезу",
+			createdAt: new Date().toISOString(),
+		});
 		setActiveDialog(null);
-		showToast("Идея по анамнезу сгенерирована · −49 ₽");
+		showToast(`Идея по анамнезу сгенерирована · −${price} ₽`);
 		return true;
-	}, [anamnesisIdx, balance, showToast]);
+	}, [anamnesisIdx, balance, appendTransaction, showToast]);
 
 	const resetForEmptyDemo = useCallback(() => {
 		setIdeas([]);
@@ -168,6 +235,8 @@ export function IdeasDemoProvider({ children }: IdeasDemoProviderProps) {
 	const value: IdeasDemoContextValue = {
 		ideas,
 		balance,
+		transactions,
+		walletOpen,
 		randomUsedToday,
 		randomLimit: RANDOM_DAILY_LIMIT,
 		filter,
@@ -178,6 +247,9 @@ export function IdeasDemoProvider({ children }: IdeasDemoProviderProps) {
 		setSort,
 		openDialog: setActiveDialog,
 		closeDialog: () => setActiveDialog(null),
+		openWallet: () => setWalletOpen(true),
+		closeWallet: () => setWalletOpen(false),
+		topUp,
 		createIdea,
 		addRandomIdea,
 		addAnamnesisIdeas,

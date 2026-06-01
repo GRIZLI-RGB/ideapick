@@ -57,4 +57,15 @@
 		color: var(--color-stone-200);
 		text-decoration-color: var(--color-stone-400);
 	}
+
+	.wallet-amount-input {
+		-moz-appearance: textfield;
+		appearance: textfield;
+	}
+
+	.wallet-amount-input::-webkit-outer-spin-button,
+	.wallet-amount-input::-webkit-inner-spin-button {
+		-webkit-appearance: none;
+		margin: 0;
+	}
 }
