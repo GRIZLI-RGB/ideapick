@@ -1,5 +1,4 @@
 import { INITIAL_IDEAS } from "@/lib/ideas/mock-data";
-import { VERDICTS } from "@/lib/ideas/constants";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import type { Metadata } from "next";
@@ -32,12 +31,11 @@ export default async function IdeaDetailPage({ params }: PageProps) {
 
 			{idea ? (
 				<article className="mt-6 rounded-2xl border border-stone-800/80 bg-stone-900/50 p-6">
-					{idea.hasAnalysis && idea.verdict ? (
-						<span
-							className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold ring-1 ${VERDICTS[idea.verdict].bg} ${VERDICTS[idea.verdict].color}`}
-						>
-							{VERDICTS[idea.verdict].label}
-						</span>
+					{idea.hasAnalysis && idea.score != null ? (
+						<p className="text-xs text-stone-500">
+							Оценка:{" "}
+							<span className="font-semibold text-amber-400">{idea.score}/100</span>
+						</p>
 					) : (
 						<span className="text-xs text-stone-500">Без анализа</span>
 					)}
@@ -45,15 +43,8 @@ export default async function IdeaDetailPage({ params }: PageProps) {
 					<p className="mt-3 text-sm leading-relaxed text-stone-400">
 						{idea.description}
 					</p>
-					{idea.score != null ? (
-						<p className="mt-4 text-sm text-stone-500">
-							Оценка AI:{" "}
-							<span className="font-semibold text-amber-400">{idea.score}/100</span>
-						</p>
-					) : null}
 					<p className="mt-6 rounded-xl border border-dashed border-stone-700 bg-stone-950/50 px-4 py-3 text-xs text-stone-500">
-						Заглушка детальной карточки — редактирование, анализ и архив будут
-						позже.
+						Заглушка детальной карточки — анализ и архив будут позже.
 					</p>
 				</article>
 			) : (

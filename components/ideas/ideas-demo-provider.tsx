@@ -161,9 +161,7 @@ export function IdeasDemoProvider({ children }: IdeasDemoProviderProps) {
 				id: String(++idCounter),
 				title: title.trim(),
 				description: description.trim(),
-				verdict: null,
 				score: null,
-				tag: null,
 				createdAt: new Date().toISOString(),
 				hasAnalysis: false,
 			};

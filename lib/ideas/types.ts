@@ -1,12 +1,8 @@
-export type Verdict = "do" | "test" | "wait" | "skip";
-
 export type Idea = {
 	id: string;
 	title: string;
 	description: string;
-	verdict: Verdict | null;
 	score: number | null;
-	tag: string | null;
 	createdAt: string;
 	hasAnalysis: boolean;
 };
