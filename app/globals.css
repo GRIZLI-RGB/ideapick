@@ -1,6 +1,17 @@
 @import "tailwindcss";
 
 @layer base {
+	*,
+	html {
+		scrollbar-width: none;
+		-ms-overflow-style: none;
+	}
+
+	*::-webkit-scrollbar,
+	html::-webkit-scrollbar {
+		display: none;
+	}
+
 	html {
 		color-scheme: dark;
 	}

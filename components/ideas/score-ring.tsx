@@ -13,7 +13,7 @@ type ScoreRingProps = {
 const SIZE = {
 	sm: { box: "size-9", text: "text-[9px]", r: 13, stroke: 2.5, dash: 82 },
 	md: { box: "size-11", text: "text-[10px]", r: 15, stroke: 3, dash: 94 },
-	lg: { box: "size-14", text: "text-xs", r: 18, stroke: 3, dash: 113 },
+	lg: { box: "size-14", text: "text-xs", r: 16, stroke: 3, dash: 100 },
 };
 
 export function ScoreRing({
@@ -27,8 +27,12 @@ export function ScoreRing({
 	const dash = (score / 100) * s.dash;
 
 	return (
-		<div className={`relative ${s.box} ${className ?? ""}`}>
-			<svg viewBox="0 0 36 36" className={`${s.box} -rotate-90`}>
+		<div className={`relative shrink-0 ${s.box} ${className ?? ""}`}>
+			<svg
+				viewBox="-2 -2 40 40"
+				className={`${s.box} -rotate-90 overflow-visible`}
+				aria-hidden
+			>
 				<circle
 					cx="18"
 					cy="18"
