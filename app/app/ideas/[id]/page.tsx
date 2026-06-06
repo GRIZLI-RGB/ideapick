@@ -12,6 +12,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 	const idea = INITIAL_IDEAS.find((i) => i.id === id);
 	return {
 		title: idea ? `${idea.title} — Ideapick` : "Идея — Ideapick",
+		description:
+			"Детальная страница идеи с AI-анализом: оценка, спрос, конкуренция и следующие шаги.",
 	};
 }
 

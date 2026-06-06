@@ -1,5 +1,6 @@
 "use client";
 
+import { PRICES } from "@/lib/ideas/constants";
 import type { Idea } from "@/lib/ideas/types";
 import { AnimatePresence, motion } from "framer-motion";
 import {
@@ -96,7 +97,7 @@ export function IdeaDetailActions({
 								className="flex w-full cursor-pointer items-center gap-2.5 border-b border-stone-800/80 px-3.5 py-2.5 text-left text-sm text-stone-200 transition hover:bg-stone-800/60"
 							>
 								<RefreshCw className="size-4 text-amber-400/90" />
-								Обновить анализ · 99 ₽
+								Обновить анализ · {PRICES.analysis} ₽
 							</button>
 						) : null}
 

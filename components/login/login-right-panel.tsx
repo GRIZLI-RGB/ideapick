@@ -146,7 +146,7 @@ export function LoginRightPanel({
 									<input
 										type="email"
 										required
-										placeholder="you@example.com"
+										placeholder="вы@example.com"
 										value={email}
 										onChange={(e) => setEmail(e.target.value)}
 										className={`w-full rounded-xl py-3 pl-10 pr-4 text-sm outline-none transition focus:ring-2 ${m.input}`}

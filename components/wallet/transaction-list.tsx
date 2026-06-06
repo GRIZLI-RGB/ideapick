@@ -108,7 +108,7 @@ export function TransactionList() {
 
 	return (
 		<div className="flex min-h-0 flex-col">
-			<div className="max-h-52 overflow-y-auto sm:max-h-60">
+			<div className="no-scrollbar max-h-52 overflow-y-auto sm:max-h-60">
 				<ul>
 					{visible.map((tx, index) => (
 						<TransactionRow

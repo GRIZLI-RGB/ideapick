@@ -111,7 +111,7 @@ export function TicketThreadPanel({
 				}`}
 			>
 				<div
-					className={`flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto ${
+					className={`no-scrollbar flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto ${
 						compact
 							? "max-h-[min(55vh,480px)] px-4 py-3"
 							: "min-h-[280px] max-h-[min(60vh,560px)] p-4 sm:p-6"

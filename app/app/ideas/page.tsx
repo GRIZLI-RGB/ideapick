@@ -3,6 +3,8 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
 	title: "Идеи — Ideapick",
+	description:
+		"Ваши бизнес-идеи и их AI-оценки: добавляйте новые, анализируйте и сравнивайте.",
 };
 
 type PageProps = {

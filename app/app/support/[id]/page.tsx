@@ -9,6 +9,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 	const { id } = await params;
 	return {
 		title: `Обращение #${id} — Ideapick`,
+		description: "Переписка по обращению в поддержку Ideapick.",
 	};
 }
 

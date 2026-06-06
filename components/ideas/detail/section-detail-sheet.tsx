@@ -77,7 +77,7 @@ export function SectionDetailSheet({
 								<X className="size-4" />
 							</button>
 						</div>
-						<div className="overflow-y-auto px-5 py-4">
+						<div className="no-scrollbar overflow-y-auto px-5 py-4">
 							<ReportSectionBody sectionKey={sectionKey} report={report} />
 						</div>
 					</motion.div>

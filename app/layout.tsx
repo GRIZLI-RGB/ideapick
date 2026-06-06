@@ -7,13 +7,18 @@ const geist = Geist({
 	variable: "--font-geist",
 });
 
+const APP_DESCRIPTION =
+	"Оцените бизнес-идею с помощью AI-анализа — узнайте спрос, конкуренцию и монетизацию до того, как вложите ресурсы.";
+
 export const metadata: Metadata = {
 	title: "Ideapick",
-	description: "Ideapick",
-	metadataBase: new URL("https://ideapick.ru"),
+	description: APP_DESCRIPTION,
+	metadataBase: new URL(
+		process.env.NEXT_PUBLIC_APP_URL ?? "https://ideapick.ru",
+	),
 	openGraph: {
 		title: "Ideapick",
-		description: "Ideapick",
+		description: APP_DESCRIPTION,
 		siteName: "Ideapick",
 		locale: "ru_RU",
 		type: "website",
@@ -21,7 +26,7 @@ export const metadata: Metadata = {
 	twitter: {
 		card: "summary_large_image",
 		title: "Ideapick",
-		description: "Ideapick",
+		description: APP_DESCRIPTION,
 	},
 	icons: {
 		other: [
