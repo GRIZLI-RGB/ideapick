@@ -8,10 +8,9 @@ export const HEADER_SCALE = {
 	wallet: "size-4",
 } as const;
 
-export type AppNavId = "ideas" | "compare" | "support";
+export type AppNavId = "ideas" | "support";
 
 export function resolveAppNavId(pathname: string): AppNavId {
-	if (pathname.startsWith("/app/compare")) return "compare";
 	if (pathname.startsWith("/app/support")) return "support";
 	return "ideas";
 }

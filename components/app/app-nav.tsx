@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { HEADER_SCALE, resolveAppNavId } from "@/lib/app/header-scale";
 import { useSupportDemo } from "@/components/support/support-demo-provider";
-import { GitCompare, Headphones, Lightbulb } from "lucide-react";
+import { Headphones, Lightbulb } from "lucide-react";
 
 export function AppNav() {
 	const pathname = usePathname();
@@ -19,12 +19,6 @@ export function AppNav() {
 			href: "/app/ideas",
 			label: "Идеи",
 			Icon: Lightbulb,
-		},
-		{
-			id: "compare" as const,
-			href: "/app/compare",
-			label: "Сравнение",
-			Icon: GitCompare,
 		},
 		{
 			id: "support" as const,

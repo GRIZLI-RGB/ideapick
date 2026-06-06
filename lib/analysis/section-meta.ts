@@ -2,8 +2,8 @@ import type { LucideIcon } from "lucide-react";
 import {
 	AlertTriangle,
 	Coins,
-	GitCompare,
 	ListChecks,
+	Swords,
 	Users,
 	Wrench,
 } from "lucide-react";
@@ -27,7 +27,7 @@ export const REPORT_SECTIONS: {
 		key: "competition",
 		label: "Конкуренция",
 		shortLabel: "Конкуренция",
-		icon: GitCompare,
+		icon: Swords,
 	},
 	{ key: "monetization", label: "Монетизация", shortLabel: "Деньги", icon: Coins },
 	{
