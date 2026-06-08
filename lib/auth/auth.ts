@@ -5,7 +5,7 @@ import { magicLink } from "better-auth/plugins";
 import { db } from "@/drizzle";
 import * as schema from "@/drizzle/schema";
 import { sendMagicLinkEmail } from "@/lib/auth/email";
-import { PRICES } from "@/lib/ideas/constants";
+import { grantWelcomeBonus } from "@/lib/wallet/service";
 
 const googleClientId = process.env.GOOGLE_CLIENT_ID;
 const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET;
@@ -42,9 +42,16 @@ export const auth = betterAuth({
 		user: {
 			create: {
 				after: async (createdUser) => {
-					console.info(
-						`[auth] новый пользователь ${createdUser.email}: ожидает начисление приветственного бонуса +${PRICES.welcomeBonus} ₽`,
-					);
+					// Первый вход = регистрация → приветственный бонус +100 ₽.
+					// Идемпотентно; ошибки логируем, но не блокируем вход.
+					try {
+						await grantWelcomeBonus(createdUser.id);
+					} catch (error) {
+						console.error(
+							`[auth] не удалось начислить приветственный бонус ${createdUser.email}:`,
+							error,
+						);
+					}
 				},
 			},
 		},

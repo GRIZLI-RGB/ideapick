@@ -6,6 +6,7 @@ import {
 	calcTopUpBonus,
 	TOP_UP_MAX,
 	TOP_UP_MIN,
+	TOP_UP_PRESETS,
 } from "@/lib/wallet/bonus";
 import { AnimatePresence, motion } from "framer-motion";
 import { Gift, Loader2, Wallet, X } from "lucide-react";
@@ -44,9 +45,9 @@ export function WalletModal() {
 	async function handleTopUp() {
 		if (!amountValid || loading) return;
 		setLoading(true);
-		await topUp(amount);
-		setLoading(false);
-		closeWallet();
+		const ok = await topUp(amount);
+		// При успехе происходит редирект на оплату — спиннер не сбрасываем.
+		if (!ok) setLoading(false);
 	}
 
 	return (
@@ -144,6 +145,27 @@ export function WalletModal() {
 									{TOP_UP_MIN.toLocaleString("ru-RU")}–
 									{TOP_UP_MAX.toLocaleString("ru-RU")} ₽
 								</p>
+
+								<div className="mt-3 grid grid-cols-4 gap-2">
+									{TOP_UP_PRESETS.map((preset) => {
+										const active = amountValid && amount === preset;
+										return (
+											<button
+												key={preset}
+												type="button"
+												onClick={() => setAmountStr(String(preset))}
+												aria-pressed={active}
+												className={`cursor-pointer rounded-lg border px-2 py-1.5 text-xs font-semibold tabular-nums transition ${
+													active
+														? "border-amber-500/40 bg-amber-500/15 text-amber-200"
+														: "border-stone-700 bg-stone-950/60 text-stone-300 hover:border-stone-600 hover:bg-stone-800/60"
+												}`}
+											>
+												{preset.toLocaleString("ru-RU")}
+											</button>
+										);
+									})}
+								</div>
 							</div>
 
 							<button
@@ -155,7 +177,7 @@ export function WalletModal() {
 								{loading ? (
 									<Loader2 className="size-4 animate-spin" aria-hidden />
 								) : null}
-								{loading ? "Обработка…" : "Пополнить"}
+								{loading ? "Переход к оплате…" : "Пополнить"}
 							</button>
 
 							<div className="mt-6 flex min-h-0 flex-1 flex-col">

@@ -1,6 +1,9 @@
 export const TOP_UP_MIN = 100;
 export const TOP_UP_MAX = 100_000;
 
+/** Пресеты сумм пополнения (см. spec.md). */
+export const TOP_UP_PRESETS = [100, 300, 500, 1000] as const;
+
 /** Пороги бонуса при пополнении (демо; не суммируются) */
 export const TOP_UP_BONUS_TIERS = [
 	{ from: 500, label: "+5% к сумме" },

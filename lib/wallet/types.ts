@@ -1,4 +1,9 @@
-export type TransactionKind = "topup" | "anamnesis" | "analysis" | "bonus";
+export type TransactionKind =
+	| "welcome"
+	| "topup"
+	| "anamnesis"
+	| "analysis"
+	| "bonus";
 
 export type Transaction = {
 	id: string;
@@ -7,10 +12,4 @@ export type Transaction = {
 	amount: number;
 	label: string;
 	createdAt: string;
-};
-
-export type DemoAccount = {
-	email: string;
-	provider: "google" | "email";
-	memberSince: string;
 };

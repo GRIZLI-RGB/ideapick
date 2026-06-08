@@ -1,7 +1,6 @@
 "use client";
 
 import { AccountMenuShell } from "@/components/app/header-account-menu";
-import { useIdeasDemo } from "@/components/ideas/ideas-demo-provider";
 import { ChevronDown, Wallet } from "lucide-react";
 
 const PILL =

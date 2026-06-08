@@ -5,7 +5,6 @@ import {
 	ANAMNESIS_RESULT_POOL,
 	CATALOG_POOL,
 	INITIAL_IDEAS,
-	MOCK_BALANCE,
 } from "@/lib/ideas/mock-data";
 import type {
 	AddIdeaMode,
@@ -13,18 +12,13 @@ import type {
 	Idea,
 	SortOption,
 } from "@/lib/ideas/types";
-import {
-	calcTopUpBonus,
-	calcTopUpTotal,
-	TOP_UP_MAX,
-	TOP_UP_MIN,
-} from "@/lib/wallet/bonus";
-import { INITIAL_TRANSACTIONS } from "@/lib/wallet/mock-data";
+import { TOP_UP_MAX, TOP_UP_MIN } from "@/lib/wallet/bonus";
 import type { Transaction } from "@/lib/wallet/types";
 import {
 	createContext,
 	useCallback,
 	useContext,
+	useEffect,
 	useMemo,
 	useState,
 	type ReactNode,
@@ -99,14 +93,21 @@ function nextTxId() {
 
 type IdeasDemoProviderProps = {
 	children: ReactNode;
+	/** Реальный баланс из БД (приветственный бонус + пополнения). */
+	initialBalance: number;
+	/** Реальная история операций из БД. */
+	initialTransactions: Transaction[];
 };
 
-export function IdeasDemoProvider({ children }: IdeasDemoProviderProps) {
+export function IdeasDemoProvider({
+	children,
+	initialBalance,
+	initialTransactions,
+}: IdeasDemoProviderProps) {
 	const [ideas, setIdeas] = useState<Idea[]>(INITIAL_IDEAS);
-	const [balance, setBalance] = useState(MOCK_BALANCE);
-	const [transactions, setTransactions] = useState<Transaction[]>(
-		INITIAL_TRANSACTIONS,
-	);
+	const [balance, setBalance] = useState(initialBalance);
+	const [transactions, setTransactions] =
+		useState<Transaction[]>(initialTransactions);
 	const [walletOpen, setWalletOpen] = useState(false);
 	const [randomUsedToday, setRandomUsedToday] = useState(1);
 	const [filter, setFilter] = useState<AnalysisFilter>("all");
@@ -128,31 +129,75 @@ export function IdeasDemoProvider({ children }: IdeasDemoProviderProps) {
 		]);
 	}, []);
 
+	// Результат возврата с оплаты (?topup=success|pending|canceled). Баланс уже
+	// пришёл свежим из БД (SSR), здесь только тост + очистка параметра в URL.
+	useEffect(() => {
+		const params = new URLSearchParams(window.location.search);
+		const flag = params.get("topup");
+		if (!flag) return;
+
+		params.delete("topup");
+		const query = params.toString();
+		window.history.replaceState(
+			null,
+			"",
+			window.location.pathname + (query ? `?${query}` : ""),
+		);
+
+		const message =
+			flag === "success"
+				? "Баланс пополнен"
+				: flag === "pending"
+					? "Платёж в обработке — баланс обновится после подтверждения"
+					: flag === "canceled"
+						? "Платёж отменён"
+						: null;
+		if (!message) return;
+		// Тост — вне фазы коммита эффекта (избегаем каскадных ре-рендеров).
+		const id = setTimeout(() => showToast(message), 0);
+		return () => clearTimeout(id);
+	}, [showToast]);
+
+	/**
+	 * Создаёт платёж через ЮKassa и редиректит на страницу оплаты. Зачисление
+	 * происходит на сервере при подтверждении (capture); после возврата страница
+	 * перезагружается и баланс приходит свежим из БД.
+	 */
 	const topUp = useCallback(
 		async (amount: number) => {
-			if (amount < TOP_UP_MIN || amount > TOP_UP_MAX) return false;
-			const bonus = calcTopUpBonus(amount);
-			const total = calcTopUpTotal(amount);
-			await new Promise((r) => setTimeout(r, 700));
-			setBalance((b) => b + total);
-			const label =
-				bonus > 0
-					? `Пополнение · +${bonus} ₽ бонус`
-					: "Пополнение";
-			appendTransaction({
-				kind: "topup",
-				amount: total,
-				label,
-				createdAt: new Date().toISOString(),
-			});
-			showToast(
-				bonus > 0
-					? `Зачислено ${total} ₽ (включая бонус ${bonus} ₽)`
-					: `Зачислено ${total} ₽`,
-			);
-			return true;
+			if (
+				!Number.isInteger(amount) ||
+				amount < TOP_UP_MIN ||
+				amount > TOP_UP_MAX
+			)
+				return false;
+			try {
+				const res = await fetch("/api/wallet/topup", {
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({
+						amount,
+						returnPath: window.location.pathname,
+					}),
+				});
+				if (!res.ok) {
+					const data = (await res.json().catch(() => ({}))) as {
+						error?: string;
+					};
+					showToast(data.error ?? "Не удалось создать платёж");
+					return false;
+				}
+				const { confirmationUrl } = (await res.json()) as {
+					confirmationUrl: string;
+				};
+				window.location.href = confirmationUrl;
+				return true;
+			} catch {
+				showToast("Сеть недоступна — попробуйте позже");
+				return false;
+			}
 		},
-		[appendTransaction, showToast],
+		[showToast],
 	);
 
 	const createIdea = useCallback(

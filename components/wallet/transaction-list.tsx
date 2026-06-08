@@ -9,7 +9,7 @@ import {
 	Sparkles,
 	Wallet,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 const HISTORY_PAGE_SIZE = 5;
 
@@ -17,6 +17,7 @@ const KIND_META: Record<
 	TransactionKind,
 	{ icon: typeof Wallet; credit: boolean }
 > = {
+	welcome: { icon: Gift, credit: true },
 	topup: { icon: Wallet, credit: true },
 	bonus: { icon: Gift, credit: true },
 	anamnesis: { icon: Sparkles, credit: false },
@@ -85,12 +86,10 @@ function TransactionRow({
 }
 
 export function TransactionList() {
-	const { transactions, walletOpen } = useIdeasDemo();
+	// Список монтируется только при открытии модалки кошелька, поэтому
+	// пагинация естественно сбрасывается на каждое открытие — эффект не нужен.
+	const { transactions } = useIdeasDemo();
 	const [visibleCount, setVisibleCount] = useState(HISTORY_PAGE_SIZE);
-
-	useEffect(() => {
-		if (walletOpen) setVisibleCount(HISTORY_PAGE_SIZE);
-	}, [walletOpen]);
 
 	if (transactions.length === 0) {
 		return (

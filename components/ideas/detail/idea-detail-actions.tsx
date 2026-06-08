@@ -10,7 +10,7 @@ import {
 	RefreshCw,
 	Trash2,
 } from "lucide-react";
-import { useEffect, useId, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 
 type IdeaDetailActionsProps = {
 	idea: Idea;
@@ -42,16 +42,19 @@ export function IdeaDetailActions({
 	const menuId = useId();
 	const ref = useRef<HTMLDivElement>(null);
 
+	const setMenuOpen = useCallback((next: boolean) => {
+		setOpen(next);
+		if (!next) setConfirmDelete(false);
+	}, []);
+
 	useEffect(() => {
-		if (!open) {
-			setConfirmDelete(false);
-			return;
-		}
+		if (!open) return;
 		function onClick(e: MouseEvent) {
-			if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+			if (ref.current && !ref.current.contains(e.target as Node))
+				setMenuOpen(false);
 		}
 		function onKey(e: KeyboardEvent) {
-			if (e.key === "Escape") setOpen(false);
+			if (e.key === "Escape") setMenuOpen(false);
 		}
 		document.addEventListener("mousedown", onClick);
 		document.addEventListener("keydown", onKey);
@@ -59,13 +62,13 @@ export function IdeaDetailActions({
 			document.removeEventListener("mousedown", onClick);
 			document.removeEventListener("keydown", onKey);
 		};
-	}, [open]);
+	}, [open, setMenuOpen]);
 
 	return (
 		<div className="relative shrink-0" ref={ref}>
 			<button
 				type="button"
-				onClick={() => setOpen((v) => !v)}
+				onClick={() => setMenuOpen(!open)}
 				className={TRIGGER_BTN}
 				aria-expanded={open}
 				aria-haspopup="menu"
@@ -91,7 +94,7 @@ export function IdeaDetailActions({
 								type="button"
 								role="menuitem"
 								onClick={() => {
-									setOpen(false);
+									setMenuOpen(false);
 									onUpdateAnalysis();
 								}}
 								className="flex w-full cursor-pointer items-center gap-2.5 border-b border-stone-800/80 px-3.5 py-2.5 text-left text-sm text-stone-200 transition hover:bg-stone-800/60"
@@ -106,7 +109,7 @@ export function IdeaDetailActions({
 								type="button"
 								role="menuitem"
 								onClick={() => {
-									setOpen(false);
+									setMenuOpen(false);
 									onRestore();
 								}}
 								className="flex w-full cursor-pointer items-center gap-2.5 border-b border-stone-800/80 px-3.5 py-2.5 text-left text-sm text-stone-200 transition hover:bg-stone-800/60"
@@ -119,7 +122,7 @@ export function IdeaDetailActions({
 								type="button"
 								role="menuitem"
 								onClick={() => {
-									setOpen(false);
+									setMenuOpen(false);
 									onArchive();
 								}}
 								className="flex w-full cursor-pointer items-center gap-2.5 border-b border-stone-800/80 px-3.5 py-2.5 text-left text-sm text-stone-200 transition hover:bg-stone-800/60"
@@ -139,7 +142,7 @@ export function IdeaDetailActions({
 									<button
 										type="button"
 										onClick={() => {
-											setOpen(false);
+											setMenuOpen(false);
 											onDelete();
 										}}
 										className="flex-1 cursor-pointer rounded-lg bg-rose-500/15 px-2 py-1.5 text-xs font-medium text-rose-300 transition hover:bg-rose-500/25"
@@ -164,7 +167,7 @@ export function IdeaDetailActions({
 										setConfirmDelete(true);
 										return;
 									}
-									setOpen(false);
+									setMenuOpen(false);
 									onDelete();
 								}}
 								className="flex w-full cursor-pointer items-center gap-2.5 px-3.5 py-2.5 text-left text-sm text-rose-300/90 transition hover:bg-stone-800/60"
