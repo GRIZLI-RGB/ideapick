@@ -17,6 +17,7 @@ type LoginRightPanelProps = {
 	setEmail: (v: string) => void;
 	loading: "google" | "magic" | null;
 	sent: boolean;
+	error?: string | null;
 	onGoogle: () => void;
 	onMagic: (e: React.FormEvent) => void;
 	onResetMagic: () => void;
@@ -28,6 +29,7 @@ export function LoginRightPanel({
 	setEmail,
 	loading,
 	sent,
+	error = null,
 	onGoogle,
 	onMagic,
 	onResetMagic,
@@ -57,6 +59,14 @@ export function LoginRightPanel({
 				</header>
 
 				<div className="space-y-3">
+					{error ? (
+						<p
+							role="alert"
+							className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-2.5 text-center text-xs font-medium text-red-300"
+						>
+							{error}
+						</p>
+					) : null}
 					<button
 						type="button"
 						onClick={onGoogle}
@@ -64,7 +74,9 @@ export function LoginRightPanel({
 						className={`flex w-full cursor-pointer items-center justify-center gap-3 rounded-xl border px-4 py-3 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-60 ${m.googleBtn}`}
 					>
 						{loading === "google" ? (
-							<Loader2 className={`size-5 animate-spin ${m.muted}`} />
+							<Loader2
+								className={`size-5 animate-spin ${m.muted}`}
+							/>
 						) : (
 							<GoogleIcon className="size-5" />
 						)}
@@ -101,9 +113,12 @@ export function LoginRightPanel({
 											<p className="text-sm font-semibold text-stone-50">
 												Письмо отправлено
 											</p>
-											<p className={`mt-1 text-xs leading-relaxed ${m.body}`}>
-												Откройте ссылку в письме, чтобы войти. Если письма
-												нет — проверьте «Спам».
+											<p
+												className={`mt-1 text-xs leading-relaxed ${m.body}`}
+											>
+												Откройте ссылку в письме, чтобы
+												войти. Если письма нет —
+												проверьте «Спам».
 											</p>
 										</div>
 									</div>
@@ -148,7 +163,9 @@ export function LoginRightPanel({
 										required
 										placeholder="вы@example.com"
 										value={email}
-										onChange={(e) => setEmail(e.target.value)}
+										onChange={(e) =>
+											setEmail(e.target.value)
+										}
 										className={`w-full rounded-xl py-3 pl-10 pr-4 text-sm outline-none transition focus:ring-2 ${m.input}`}
 									/>
 								</div>

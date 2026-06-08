@@ -2,7 +2,7 @@
 
 import { useIdeasDemo } from "@/components/ideas/ideas-demo-provider";
 import { HEADER_SCALE } from "@/lib/app/header-scale";
-import { MOCK_ACCOUNT } from "@/lib/wallet/mock-data";
+import { signOut, useSession } from "@/lib/auth/client";
 import { AnimatePresence, motion } from "framer-motion";
 import { LogOut, Mail, User, Wallet } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -22,20 +22,19 @@ const MENU_ROW =
 const MENU_ICON =
 	"flex size-8 shrink-0 items-center justify-center rounded-lg bg-stone-800";
 
-function formatMemberSince(iso: string) {
+function formatMemberSince(value?: string | Date | null) {
+	if (!value) return null;
+	const date = new Date(value);
+	if (Number.isNaN(date.getTime())) return null;
 	return new Intl.DateTimeFormat("ru-RU", {
 		month: "long",
 		year: "numeric",
-	}).format(new Date(iso));
+	}).format(date);
 }
 
-export function accountInitials(): string {
-	const local = MOCK_ACCOUNT.email.split("@")[0];
+export function accountInitials(email?: string | null): string {
+	const local = (email ?? "").split("@")[0];
 	return (local[0] ?? "?").toUpperCase();
-}
-
-function providerLabel() {
-	return MOCK_ACCOUNT.provider === "google" ? "Google" : "Email";
 }
 
 type AccountMenuDropdownProps = {
@@ -47,15 +46,20 @@ type AccountMenuDropdownProps = {
 	onTopUp?: () => void;
 };
 
-function EmailHeader() {
+function EmailHeader({
+	email,
+	createdAt,
+}: {
+	email: string;
+	createdAt?: string | Date | null;
+}) {
+	const memberSince = formatMemberSince(createdAt);
 	return (
 		<div className="border-b border-stone-800/80 px-4 py-2.5">
-			<p className="truncate text-sm font-medium text-stone-100">
-				{MOCK_ACCOUNT.email}
-			</p>
-			<p className="mt-0.5 text-xs text-stone-500">
-				{providerLabel()} · с {formatMemberSince(MOCK_ACCOUNT.memberSince)}
-			</p>
+			<p className="truncate text-sm font-medium text-stone-100">{email}</p>
+			{memberSince ? (
+				<p className="mt-0.5 text-xs text-stone-500">с {memberSince}</p>
+			) : null}
 		</div>
 	);
 }
@@ -147,16 +151,20 @@ function AccountMenuDropdownContent({
 	onTopUp,
 }: Omit<AccountMenuDropdownProps, "menuId">) {
 	const router = useRouter();
+	const { data } = useSession();
 	const showBalanceBlock = showBalance && !balanceOnTrigger;
+	const email = data?.user?.email ?? "";
 
-	const onLogout = () => {
+	const onLogout = async () => {
 		onClose();
+		await signOut();
 		router.push("/login");
+		router.refresh();
 	};
 
 	return (
 		<>
-			<EmailHeader />
+			<EmailHeader email={email} createdAt={data?.user?.createdAt} />
 			{showBalanceBlock ? (
 				<BalanceBlock balance={balance} onTopUp={onTopUp} onClose={onClose} />
 			) : null}
@@ -271,7 +279,9 @@ export function AccountMenuShell({
 }
 
 export function AccountEmailButton() {
+	const { data } = useSession();
 	const { menuId, rootRef, open, toggle, close } = useAccountMenu();
+	const email = data?.user?.email ?? "";
 
 	return (
 		<div ref={rootRef} className="relative">
@@ -285,7 +295,7 @@ export function AccountEmailButton() {
 			>
 				<Mail className={`${HEADER_SCALE.icon} shrink-0 text-stone-400`} />
 				<span className="hidden min-w-0 truncate text-sm sm:inline">
-					{MOCK_ACCOUNT.email}
+					{email}
 				</span>
 			</button>
 			<AnimatedAccountMenuPanel menuId={menuId} open={open}>
@@ -315,12 +325,13 @@ export function AccountIconButton({ round = false }: { round?: boolean }) {
 }
 
 export function InitialsAvatar({ size = "md" }: { size?: "sm" | "md" }) {
+	const { data } = useSession();
 	const dim = size === "sm" ? "size-8 text-xs" : "size-9 text-sm";
 	return (
 		<span
 			className={`flex shrink-0 items-center justify-center rounded-full bg-stone-800 font-semibold text-amber-200/90 ring-1 ring-stone-600/80 ${dim}`}
 		>
-			{accountInitials()}
+			{accountInitials(data?.user?.email)}
 		</span>
 	);
 }

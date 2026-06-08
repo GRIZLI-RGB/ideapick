@@ -4,7 +4,7 @@ import { LoginRightPanel } from "@/components/login/login-right-panel";
 import type { AuthThemeOverlay, LoginAuthTheme } from "@/components/login/login-theme";
 import { LOGIN_AUTH_THEME } from "@/components/login/login-theme";
 import { MOCK_IDEAS } from "@/components/login/mock-data";
-import { useMockAuth } from "@/components/login/use-mock-auth";
+import { useAuth } from "@/components/login/use-auth";
 import { AnimatePresence, motion } from "framer-motion";
 import { Check, Loader2, Sparkles } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -236,10 +236,11 @@ export function LoginPage() {
 		setEmail,
 		loading,
 		sent,
+		error,
 		signInWithGoogle,
 		sendMagicLink,
 		resetMagicLink,
-	} = useMockAuth();
+	} = useAuth();
 	const theme = LOGIN_AUTH_THEME;
 	const [phaseIdx, setPhaseIdx] = useState(0);
 	const [ideaIdx, setIdeaIdx] = useState(0);
@@ -288,6 +289,7 @@ export function LoginPage() {
 				setEmail={setEmail}
 				loading={loading}
 				sent={sent}
+				error={error}
 				onGoogle={signInWithGoogle}
 				onMagic={handleMagic}
 				onResetMagic={resetMagicLink}
