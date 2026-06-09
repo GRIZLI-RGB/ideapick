@@ -9,21 +9,25 @@ import {
 import { IdeasDemoProvider } from "@/components/ideas/ideas-demo-provider";
 import { SupportDemoProvider } from "@/components/support/support-demo-provider";
 import { WalletModal } from "@/components/wallet/wallet-modal";
+import type { Idea } from "@/lib/ideas/types";
 import type { Transaction } from "@/lib/wallet/types";
 
 export function AppLayoutClient({
 	children,
 	initialBalance,
 	initialTransactions,
+	initialIdeas,
 }: {
 	children: React.ReactNode;
 	initialBalance: number;
 	initialTransactions: Transaction[];
+	initialIdeas: Idea[];
 }) {
 	return (
 		<IdeasDemoProvider
 			initialBalance={initialBalance}
 			initialTransactions={initialTransactions}
+			initialIdeas={initialIdeas}
 		>
 			<SupportDemoProvider>
 			<AppShell>

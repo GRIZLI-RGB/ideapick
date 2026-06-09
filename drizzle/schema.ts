@@ -50,6 +50,32 @@ export const account = pgTable("account", {
 	updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
+/**
+ * Бизнес-идея пользователя. Создаётся вручную, из каталога или по анамнезу.
+ *
+ * `score` и `hasAnalysis` остаются пустыми до запуска AI-анализа (отдельная
+ * фича) — здесь хранится только сама идея: название и описание.
+ */
+export const idea = pgTable(
+	"idea",
+	{
+		id: text("id").primaryKey(),
+		userId: text("user_id")
+			.notNull()
+			.references(() => user.id, { onDelete: "cascade" }),
+		title: text("title").notNull(),
+		description: text("description").notNull().default(""),
+		// 0–100; null — анализ ещё не проводился.
+		score: integer("score"),
+		hasAnalysis: boolean("has_analysis").notNull().default(false),
+		// manual | catalog | anamnesis — источник появления идеи.
+		source: text("source").notNull().default("manual"),
+		createdAt: timestamp("created_at").notNull().defaultNow(),
+		updatedAt: timestamp("updated_at").notNull().defaultNow(),
+	},
+	(table) => [index("idea_user_idx").on(table.userId, table.createdAt)],
+);
+
 export const verification = pgTable("verification", {
 	id: text("id").primaryKey(),
 	identifier: text("identifier").notNull(),

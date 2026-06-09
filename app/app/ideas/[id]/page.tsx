@@ -1,5 +1,4 @@
 import { IdeaDetailClient } from "@/components/ideas/detail/idea-detail-client";
-import { INITIAL_IDEAS } from "@/lib/ideas/mock-data";
 import type { Metadata } from "next";
 import { Suspense } from "react";
 
@@ -7,15 +6,11 @@ type PageProps = {
 	params: Promise<{ id: string }>;
 };
 
-export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-	const { id } = await params;
-	const idea = INITIAL_IDEAS.find((i) => i.id === id);
-	return {
-		title: idea ? `${idea.title} — Ideapick` : "Идея — Ideapick",
-		description:
-			"Детальная страница идеи с AI-анализом: оценка, спрос, конкуренция и следующие шаги.",
-	};
-}
+export const metadata: Metadata = {
+	title: "Идея — Ideapick",
+	description:
+		"Детальная страница идеи с AI-анализом: оценка, спрос, конкуренция и следующие шаги.",
+};
 
 function DetailFallback() {
 	return (

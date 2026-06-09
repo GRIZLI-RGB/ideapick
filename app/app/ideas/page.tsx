@@ -7,11 +7,6 @@ export const metadata: Metadata = {
 		"Ваши бизнес-идеи и их AI-оценки: добавляйте новые, анализируйте и сравнивайте.",
 };
 
-type PageProps = {
-	searchParams: Promise<{ empty?: string }>;
-};
-
-export default async function IdeasPage({ searchParams }: PageProps) {
-	const { empty } = await searchParams;
-	return <IdeasPageClient startEmpty={empty === "1"} />;
+export default function IdeasPage() {
+	return <IdeasPageClient />;
 }

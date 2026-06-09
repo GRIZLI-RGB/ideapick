@@ -72,15 +72,18 @@ function CreateDialog({ onClose }: { onClose: () => void }) {
 	const { createIdea } = useIdeasDemo();
 	const [title, setTitle] = useState("");
 	const [description, setDescription] = useState("");
+	const [saving, setSaving] = useState(false);
 
 	return (
 		<DialogShell title="Своя идея" onClose={onClose}>
 			<form
 				className="space-y-4"
-				onSubmit={(e) => {
+				onSubmit={async (e) => {
 					e.preventDefault();
-					if (!title.trim()) return;
-					createIdea(title, description);
+					if (!title.trim() || saving) return;
+					setSaving(true);
+					const ok = await createIdea(title, description);
+					if (!ok) setSaving(false);
 				}}
 			>
 				<div>
@@ -110,9 +113,10 @@ function CreateDialog({ onClose }: { onClose: () => void }) {
 				</div>
 				<button
 					type="submit"
-					disabled={!title.trim()}
-					className="w-full cursor-pointer rounded-xl bg-amber-500 py-2.5 text-sm font-semibold text-stone-950 transition hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-50"
+					disabled={!title.trim() || saving}
+					className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-amber-500 py-2.5 text-sm font-semibold text-stone-950 transition hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-50"
 				>
+					{saving ? <Loader2 className="size-4 animate-spin" /> : null}
 					Добавить · 0 ₽
 				</button>
 			</form>
@@ -139,9 +143,8 @@ function RandomDialog({ onClose }: { onClose: () => void }) {
 				disabled={left <= 0 || loading}
 				onClick={async () => {
 					setLoading(true);
-					await new Promise((r) => setTimeout(r, 700));
-					addRandomIdea();
-					setLoading(false);
+					const ok = await addRandomIdea();
+					if (!ok) setLoading(false);
 				}}
 				className="mt-5 flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-amber-500 py-2.5 text-sm font-semibold text-stone-950 transition hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-50"
 			>
@@ -181,9 +184,8 @@ function AnamnesisDialog({ onClose }: { onClose: () => void }) {
 					disabled={!canPay || loading}
 					onClick={async () => {
 						setLoading(true);
-						await new Promise((r) => setTimeout(r, 1200));
-						addAnamnesisIdeas();
-						setLoading(false);
+						const ok = await addAnamnesisIdeas();
+						if (!ok) setLoading(false);
 					}}
 					className="mt-5 flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-amber-500 py-2.5 text-sm font-semibold text-stone-950 transition hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-50"
 				>

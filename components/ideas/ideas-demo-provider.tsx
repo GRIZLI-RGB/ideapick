@@ -4,7 +4,6 @@ import { RANDOM_DAILY_LIMIT, PRICES } from "@/lib/ideas/constants";
 import {
 	ANAMNESIS_RESULT_POOL,
 	CATALOG_POOL,
-	INITIAL_IDEAS,
 } from "@/lib/ideas/mock-data";
 import type {
 	AddIdeaMode,
@@ -42,11 +41,11 @@ type IdeasDemoContextValue = {
 	openWallet: () => void;
 	closeWallet: () => void;
 	topUp: (amount: number) => Promise<boolean>;
-	createIdea: (title: string, description: string) => void;
-	addRandomIdea: () => boolean;
-	addAnamnesisIdeas: () => boolean;
+	createIdea: (title: string, description: string) => Promise<boolean>;
+	deleteIdea: (id: string) => Promise<boolean>;
+	addRandomIdea: () => Promise<boolean>;
+	addAnamnesisIdeas: () => Promise<boolean>;
 	clearToast: () => void;
-	resetForEmptyDemo: () => void;
 	filteredIdeas: Idea[];
 	stats: { total: number; analyzed: number; pending: number };
 };
@@ -84,7 +83,6 @@ function filterIdeas(ideas: Idea[], filter: AnalysisFilter): Idea[] {
 	}
 }
 
-let idCounter = 100;
 let txCounter = 100;
 
 function nextTxId() {
@@ -97,14 +95,17 @@ type IdeasDemoProviderProps = {
 	initialBalance: number;
 	/** Реальная история операций из БД. */
 	initialTransactions: Transaction[];
+	/** Реальные идеи пользователя из БД. */
+	initialIdeas: Idea[];
 };
 
 export function IdeasDemoProvider({
 	children,
 	initialBalance,
 	initialTransactions,
+	initialIdeas,
 }: IdeasDemoProviderProps) {
-	const [ideas, setIdeas] = useState<Idea[]>(INITIAL_IDEAS);
+	const [ideas, setIdeas] = useState<Idea[]>(initialIdeas);
 	const [balance, setBalance] = useState(initialBalance);
 	const [transactions, setTransactions] =
 		useState<Transaction[]>(initialTransactions);
@@ -200,51 +201,103 @@ export function IdeasDemoProvider({
 		[showToast],
 	);
 
-	const createIdea = useCallback(
-		(title: string, description: string) => {
-			const idea: Idea = {
-				id: String(++idCounter),
-				title: title.trim(),
-				description: description.trim(),
-				score: null,
-				createdAt: new Date().toISOString(),
-				hasAnalysis: false,
-			};
-			setIdeas((prev) => [idea, ...prev]);
-			setActiveDialog(null);
-			showToast("Идея добавлена");
+	/**
+	 * Сохраняет идею в БД через API и добавляет её в начало списка. Возвращает
+	 * созданную идею или null при ошибке (с тостом).
+	 */
+	const persistIdea = useCallback(
+		async (
+			title: string,
+			description: string,
+			source: "manual" | "catalog" | "anamnesis",
+		): Promise<Idea | null> => {
+			try {
+				const res = await fetch("/api/ideas", {
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({ title, description, source }),
+				});
+				if (!res.ok) {
+					const data = (await res.json().catch(() => ({}))) as {
+						error?: string;
+					};
+					showToast(data.error ?? "Не удалось сохранить идею");
+					return null;
+				}
+				const { idea } = (await res.json()) as { idea: Idea };
+				setIdeas((prev) => [idea, ...prev]);
+				return idea;
+			} catch {
+				showToast("Сеть недоступна — попробуйте позже");
+				return null;
+			}
 		},
 		[showToast],
 	);
 
-	const addRandomIdea = useCallback(() => {
+	const createIdea = useCallback(
+		async (title: string, description: string) => {
+			const idea = await persistIdea(title, description, "manual");
+			if (!idea) return false;
+			setActiveDialog(null);
+			showToast("Идея добавлена");
+			return true;
+		},
+		[persistIdea, showToast],
+	);
+
+	const deleteIdea = useCallback(
+		async (id: string) => {
+			const snapshot = ideas;
+			setIdeas((prev) => prev.filter((i) => i.id !== id));
+			try {
+				const res = await fetch(`/api/ideas/${id}`, { method: "DELETE" });
+				if (!res.ok) {
+					setIdeas(snapshot);
+					showToast("Не удалось удалить идею");
+					return false;
+				}
+				showToast("Идея удалена");
+				return true;
+			} catch {
+				setIdeas(snapshot);
+				showToast("Сеть недоступна — попробуйте позже");
+				return false;
+			}
+		},
+		[ideas, showToast],
+	);
+
+	const addRandomIdea = useCallback(async () => {
 		if (randomUsedToday >= RANDOM_DAILY_LIMIT) return false;
 		const template = CATALOG_POOL[catalogIdx % CATALOG_POOL.length];
+		const idea = await persistIdea(
+			template.title,
+			template.description,
+			"catalog",
+		);
+		if (!idea) return false;
 		setCatalogIdx((i) => i + 1);
-		const idea: Idea = {
-			...template,
-			id: String(++idCounter),
-			createdAt: new Date().toISOString(),
-		};
-		setIdeas((prev) => [idea, ...prev]);
 		setRandomUsedToday((n) => n + 1);
 		setActiveDialog(null);
 		showToast("Идея из каталога добавлена");
 		return true;
-	}, [catalogIdx, randomUsedToday, showToast]);
+	}, [catalogIdx, randomUsedToday, persistIdea, showToast]);
 
-	const addAnamnesisIdeas = useCallback(() => {
+	const addAnamnesisIdeas = useCallback(async () => {
 		const price = PRICES.anamnesis;
 		if (balance < price) return false;
 		const template =
 			ANAMNESIS_RESULT_POOL[anamnesisIdx % ANAMNESIS_RESULT_POOL.length];
+		const idea = await persistIdea(
+			template.title,
+			template.description,
+			"anamnesis",
+		);
+		if (!idea) return false;
 		setAnamnesisIdx((i) => i + 1);
-		const idea: Idea = {
-			...template,
-			id: String(++idCounter),
-			createdAt: new Date().toISOString(),
-		};
-		setIdeas((prev) => [idea, ...prev]);
+		// NOTE: списание баланса пока косметическое (без записи в БД) — реальная
+		// тарификация генерации появится вместе с биллингом анализа.
 		setBalance((b) => b - price);
 		appendTransaction({
 			kind: "anamnesis",
@@ -255,11 +308,7 @@ export function IdeasDemoProvider({
 		setActiveDialog(null);
 		showToast(`Идея по анамнезу сгенерирована · −${price} ₽`);
 		return true;
-	}, [anamnesisIdx, balance, appendTransaction, showToast]);
-
-	const resetForEmptyDemo = useCallback(() => {
-		setIdeas([]);
-	}, []);
+	}, [anamnesisIdx, balance, appendTransaction, persistIdea, showToast]);
 
 	const filteredIdeas = useMemo(
 		() => sortIdeas(filterIdeas(ideas, filter), sort),
@@ -294,10 +343,10 @@ export function IdeasDemoProvider({
 		closeWallet: () => setWalletOpen(false),
 		topUp,
 		createIdea,
+		deleteIdea,
 		addRandomIdea,
 		addAnamnesisIdeas,
 		clearToast: () => setToast(null),
-		resetForEmptyDemo,
 		filteredIdeas,
 		stats,
 	};

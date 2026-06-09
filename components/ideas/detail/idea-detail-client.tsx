@@ -8,7 +8,7 @@ import { useIdeasDemo } from "@/components/ideas/ideas-demo-provider";
 import { getMockAnalysisReport } from "@/lib/analysis/mock-reports";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 
 type IdeaDetailClientProps = {
 	id: string;
@@ -16,7 +16,8 @@ type IdeaDetailClientProps = {
 
 export function IdeaDetailClient({ id }: IdeaDetailClientProps) {
 	const router = useRouter();
-	const { ideas } = useIdeasDemo();
+	const { ideas, deleteIdea } = useIdeasDemo();
+	const [deleting, setDeleting] = useState(false);
 
 	const idea = ideas.find((i) => i.id === id);
 	const report = useMemo(
@@ -25,6 +26,9 @@ export function IdeaDetailClient({ id }: IdeaDetailClientProps) {
 	);
 
 	if (!idea) {
+		// Во время удаления идея уже убрана из состояния — не мигаем «не найдено»,
+		// просто ждём перехода к списку.
+		if (deleting) return null;
 		return (
 			<div className="w-full pb-10">
 				<IdeaDetailBackLink />
@@ -47,7 +51,11 @@ export function IdeaDetailClient({ id }: IdeaDetailClientProps) {
 				hasAnalysis={hasAnalysis}
 				onArchive={() => router.push("/app/ideas")}
 				onRestore={() => {}}
-				onDelete={() => router.push("/app/ideas")}
+				onDelete={async () => {
+					setDeleting(true);
+					router.push("/app/ideas");
+					await deleteIdea(idea.id);
+				}}
 				onUpdateAnalysis={() => {}}
 			/>
 
