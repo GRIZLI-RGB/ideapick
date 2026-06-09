@@ -91,6 +91,20 @@
 	animation: land-row-in 0.45s cubic-bezier(0.21, 0.47, 0.32, 0.98) both;
 }
 
+/* Уважение к prefers-reduced-motion: декоративные анимации отключаются */
+@media (prefers-reduced-motion: reduce) {
+	.animate-fade-up,
+	.animate-fade-in,
+	.animate-float,
+	.animate-glow-breathe,
+	.animate-spin-slow,
+	.animate-spin-reverse,
+	.animate-marquee,
+	.animate-row-in {
+		animation: none;
+	}
+}
+
 @utility no-scrollbar {
 	scrollbar-width: none;
 	-ms-overflow-style: none;
