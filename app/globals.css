@@ -6,6 +6,91 @@
 	}
 }
 
+/* ── Landing keyframes ───────────────────────────────────────────────── */
+
+@keyframes land-fade-up {
+	from {
+		opacity: 0;
+		transform: translateY(22px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+@keyframes land-fade-in {
+	from { opacity: 0; }
+	to   { opacity: 1; }
+}
+
+@keyframes land-float {
+	0%, 100% { transform: translateY(0px); }
+	50%       { transform: translateY(-11px); }
+}
+
+@keyframes land-glow-breathe {
+	0%, 100% { opacity: 0.45; transform: scale(1); }
+	50%       { opacity: 0.85; transform: scale(1.08); }
+}
+
+@keyframes land-spin-slow {
+	to { transform: rotate(360deg); }
+}
+
+@keyframes land-spin-reverse {
+	to { transform: rotate(-360deg); }
+}
+
+@keyframes land-marquee {
+	from { transform: translateX(0); }
+	to   { transform: translateX(-50%); }
+}
+
+@keyframes land-border-shimmer {
+	0%   { background-position: 0% 50%; }
+	100% { background-position: 200% 50%; }
+}
+
+@keyframes land-row-in {
+	from { opacity: 0; transform: translateX(-10px); }
+	to   { opacity: 1; transform: translateX(0); }
+}
+
+/* ── Landing utilities ───────────────────────────────────────────────── */
+
+@utility animate-fade-up {
+	animation: land-fade-up 0.7s cubic-bezier(0.21, 0.47, 0.32, 0.98) both;
+}
+
+@utility animate-fade-in {
+	animation: land-fade-in 0.65s ease both;
+}
+
+@utility animate-float {
+	animation: land-float 7s ease-in-out infinite;
+}
+
+@utility animate-glow-breathe {
+	animation: land-glow-breathe 4s ease-in-out infinite;
+}
+
+@utility animate-spin-slow {
+	animation: land-spin-slow 22s linear infinite;
+}
+
+@utility animate-spin-reverse {
+	animation: land-spin-reverse 18s linear infinite;
+}
+
+@utility animate-marquee {
+	animation: land-marquee 34s linear infinite;
+}
+
+@utility animate-row-in {
+	animation: land-row-in 0.45s cubic-bezier(0.21, 0.47, 0.32, 0.98) both;
+}
+
 @utility no-scrollbar {
 	scrollbar-width: none;
 	-ms-overflow-style: none;
