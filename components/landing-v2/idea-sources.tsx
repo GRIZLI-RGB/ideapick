@@ -1,5 +1,5 @@
 import { Reveal } from "@/components/landing-v2/reveal";
-import { SectionHeading } from "@/components/landing/section-heading";
+import { SectionHeading } from "@/components/landing-v2/section-heading";
 import { PRICES, RANDOM_DAILY_LIMIT } from "@/lib/ideas/constants";
 import { Dices, Fingerprint, PenLine } from "lucide-react";
 import type { LucideIcon } from "lucide-react";

@@ -1,4 +1,4 @@
-import { Reveal } from "@/components/landing/reveal";
+import { Reveal } from "@/components/landing-v2/reveal";
 
 type SectionHeadingProps = {
 	eyebrow: string;

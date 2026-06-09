@@ -57,6 +57,23 @@
 	to   { opacity: 1; transform: translateX(0); }
 }
 
+@keyframes land-aurora-drift {
+	0%, 100% { transform: translate(0, 0) scale(1); }
+	33%       { transform: translate(4%, 3%) scale(1.06); }
+	66%       { transform: translate(-3%, 5%) scale(0.96); }
+}
+
+@keyframes land-aurora-drift-reverse {
+	0%, 100% { transform: translate(0, 0) scale(1); }
+	33%       { transform: translate(-5%, 2%) scale(1.04); }
+	66%       { transform: translate(3%, -4%) scale(1.08); }
+}
+
+@keyframes land-aurora-wave {
+	0%, 100% { opacity: 0.3; transform: scaleX(0.85); }
+	50%       { opacity: 0.7; transform: scaleX(1); }
+}
+
 /* ── Landing utilities ───────────────────────────────────────────────── */
 
 @utility animate-fade-up {
@@ -91,6 +108,18 @@
 	animation: land-row-in 0.45s cubic-bezier(0.21, 0.47, 0.32, 0.98) both;
 }
 
+@utility animate-aurora-drift {
+	animation: land-aurora-drift 18s ease-in-out infinite;
+}
+
+@utility animate-aurora-drift-reverse {
+	animation: land-aurora-drift-reverse 22s ease-in-out infinite;
+}
+
+@utility animate-aurora-wave {
+	animation: land-aurora-wave 8s ease-in-out infinite;
+}
+
 /* Уважение к prefers-reduced-motion: декоративные анимации отключаются */
 @media (prefers-reduced-motion: reduce) {
 	.animate-fade-up,
@@ -100,7 +129,10 @@
 	.animate-spin-slow,
 	.animate-spin-reverse,
 	.animate-marquee,
-	.animate-row-in {
+	.animate-row-in,
+	.animate-aurora-drift,
+	.animate-aurora-drift-reverse,
+	.animate-aurora-wave {
 		animation: none;
 	}
 }

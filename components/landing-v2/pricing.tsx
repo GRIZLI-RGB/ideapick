@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Reveal } from "@/components/landing-v2/reveal";
-import { SectionHeading } from "@/components/landing/section-heading";
+import { SectionHeading } from "@/components/landing-v2/section-heading";
 import { PRICES, RANDOM_DAILY_LIMIT } from "@/lib/ideas/constants";
 import { ArrowRight, Check, Gift, Wallet } from "lucide-react";
 

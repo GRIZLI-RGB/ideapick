@@ -82,7 +82,7 @@ export function Hero() {
 						className="animate-fade-up mt-3.5 text-xs text-stone-500"
 						style={{ animationDelay: "0.25s" }}
 					>
-						+100 ₽ при регистрации — хватает на первый полный анализ. Карта не нужна.
+						+100 ₽ при регистрации — хватает на первый полный анализ.
 					</p>
 
 					{/* Stats strip */}

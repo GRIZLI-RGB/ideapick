@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Reveal } from "@/components/landing-v2/reveal";
-import { SectionHeading } from "@/components/landing/section-heading";
+import { SectionHeading } from "@/components/landing-v2/section-heading";
 import { ChevronDown } from "lucide-react";
 
 const FAQ: { q: string; a: string }[] = [

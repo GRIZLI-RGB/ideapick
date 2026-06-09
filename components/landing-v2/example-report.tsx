@@ -1,5 +1,5 @@
 import { Reveal } from "@/components/landing-v2/reveal";
-import { SectionHeading } from "@/components/landing/section-heading";
+import { SectionHeading } from "@/components/landing-v2/section-heading";
 import { ScoreRing } from "@/components/ideas/score-ring";
 import { REPORT_SECTIONS, type ReportSectionKey } from "@/lib/analysis/section-meta";
 import { PRICES } from "@/lib/ideas/constants";
