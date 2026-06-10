@@ -30,7 +30,7 @@ export function LandingFooter() {
 					<Link href="/" className="inline-flex items-center gap-2.5">
 						<BrandMark size={28} />
 						<span className="text-[0.9375rem] font-semibold tracking-tight text-stone-100">
-							IdeaPick
+							Ideapick
 						</span>
 					</Link>
 					<p className="mt-4 max-w-xs text-sm leading-relaxed text-stone-400">
@@ -86,7 +86,7 @@ export function LandingFooter() {
 			</div>
 
 			<div className="mx-auto mt-12 flex max-w-6xl flex-col gap-1.5 border-t border-stone-800/60 pt-6 text-xs text-stone-600 sm:flex-row sm:items-center sm:justify-between">
-				<p>© {new Date().getFullYear()} IdeaPick · ideapick.ru</p>
+				<p>© {new Date().getFullYear()} Ideapick · ideapick.ru</p>
 				<p>Оценка AI — рекомендация, не инвестиционный совет.</p>
 			</div>
 		</footer>

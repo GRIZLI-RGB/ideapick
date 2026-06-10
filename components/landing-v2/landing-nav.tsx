@@ -59,7 +59,7 @@ export function LandingNav() {
 					>
 						<BrandMark size={30} />
 						<span className="text-[0.9375rem] font-semibold tracking-tight text-stone-100">
-							IdeaPick
+							Ideapick
 						</span>
 					</Link>
 

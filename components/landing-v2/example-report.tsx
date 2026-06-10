@@ -137,14 +137,6 @@ export function ExampleReport() {
 						</div>
 					</div>
 				</Reveal>
-
-				<Reveal
-					delay={0.12}
-					className="mt-4 flex items-center justify-center rounded-2xl border border-stone-800/50 bg-stone-900/20 px-5 py-3.5 text-center text-xs text-stone-500"
-				>
-					Оценка — рекомендация AI, а не инвестиционный совет или гарантия
-					результата. Финальное решение всегда за вами.
-				</Reveal>
 			</div>
 		</section>
 	);

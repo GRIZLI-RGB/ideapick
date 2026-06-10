@@ -1,18 +1,28 @@
 import Link from "next/link";
 import { AnalysisPreview } from "@/components/landing-v2/analysis-preview";
-import { ArrowRight, BarChart3, FileSearch, Sparkles, Wallet, Zap } from "lucide-react";
+import {
+	ArrowRight,
+	BarChart3,
+	FileSearch,
+	Sparkles,
+	Wallet,
+	Zap,
+} from "lucide-react";
 
 const STATS = [
-	{ icon: Zap,       label: "Вердикт за ~1 минуту" },
+	{ icon: Zap, label: "Вердикт за ~1 минуту" },
 	{ icon: BarChart3, label: "6 факторов в одном отчёте" },
-	{ icon: Wallet,    label: "Без подписки — от 99 ₽ за анализ" },
+	{ icon: Wallet, label: "Без подписки — от 99 ₽ за анализ" },
 ];
 
 export function Hero() {
 	return (
 		<section className="relative px-5 pb-16 pt-28 sm:px-6 sm:pt-32 lg:pb-20 lg:pt-36">
 			{/* Декоративные кольца за hero */}
-			<div className="pointer-events-none absolute left-1/2 top-16 -z-10 -translate-x-1/2" aria-hidden>
+			<div
+				className="pointer-events-none absolute left-1/2 top-16 -z-10 -translate-x-1/2"
+				aria-hidden
+			>
 				<div className="animate-spin-slow size-[580px] rounded-full border border-amber-500/[0.07]" />
 				<div className="animate-spin-reverse absolute left-1/2 top-1/2 size-[400px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-amber-500/[0.05]" />
 			</div>
@@ -32,24 +42,25 @@ export function Hero() {
 						className="animate-fade-up mt-5 text-balance text-3xl font-bold leading-[1.12] tracking-tight text-stone-50 sm:text-4xl lg:text-[2.7rem]"
 						style={{ animationDelay: "0.07s" }}
 					>
-						Узнайте, стоит ли{" "}
 						<span className="bg-gradient-to-r from-amber-300 via-amber-400 to-amber-500 bg-clip-text text-transparent">
-							браться за идею
+							Стоит ли браться за идею?
 						</span>
-						<br className="hidden lg:block" />
-						{" "}— до того, как{" "}
-						<br className="hidden sm:block lg:hidden" />
-						потратите на неё месяцы
+						<br />
+						Узнайте это заранее —
+						<br />
+						без траты своего времени
 					</h1>
 
 					<p
 						className="animate-fade-up mx-auto mt-5 max-w-xl text-pretty text-base leading-relaxed text-stone-400 sm:text-[1.0625rem] lg:mx-0"
 						style={{ animationDelay: "0.14s" }}
 					>
-						Опишите идею в двух предложениях. AI оценит спрос, конкуренцию,
-						монетизацию и риски — и вернёт вердикт{" "}
-						<span className="font-semibold text-stone-200">0–100</span> с
-						планом первых шагов. Честно, даже если идея слабая.
+						Опишите идею в двух предложениях. AI оценит спрос,
+						конкуренцию, монетизацию и риски — и вернёт вердикт{" "}
+						<span className="font-semibold text-stone-200">
+							0–100
+						</span>{" "}
+						с планом первых шагов. Честно, даже если идея слабая.
 					</p>
 
 					{/* CTA кнопки */}
@@ -82,7 +93,8 @@ export function Hero() {
 						className="animate-fade-up mt-3.5 text-xs text-stone-500"
 						style={{ animationDelay: "0.25s" }}
 					>
-						+100 ₽ при регистрации — хватает на первый полный анализ.
+						+100 ₽ при регистрации — хватает на первый полный
+						анализ.
 					</p>
 
 					{/* Stats strip */}

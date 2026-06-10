@@ -15,12 +15,6 @@ export function AuroraBackground() {
 				className="animate-aurora-drift-reverse absolute bottom-[-5%] right-[20%] h-[40vh] w-[45vw] rounded-full bg-[radial-gradient(ellipse,rgb(56_189_248/0.06)_0%,transparent_70%)] blur-3xl"
 				style={{ animationDelay: "-2s" }}
 			/>
-			{/* Горизонтальные волны света */}
-			<div className="animate-aurora-wave absolute inset-x-0 top-[28%] h-px bg-gradient-to-r from-transparent via-amber-400/25 to-transparent" />
-			<div
-				className="animate-aurora-wave absolute inset-x-0 top-[52%] h-px bg-gradient-to-r from-transparent via-amber-500/15 to-transparent"
-				style={{ animationDelay: "-3s" }}
-			/>
 		</div>
 	);
 }
