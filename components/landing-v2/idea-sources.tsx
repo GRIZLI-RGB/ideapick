@@ -22,7 +22,7 @@ const SOURCES: Source[] = [
 		title: "Своя идея",
 		price: "Бесплатно",
 		free: true,
-		text: "Уже есть задумка? Запишите название и описание — и сразу отправляйте на анализ. Это всё, что нужно.",
+		text: "Уже есть задумка? Запишите название и описание — и сразу отправляйте на анализ.",
 		accent: "border-stone-700/70 hover:border-stone-600/80",
 		iconClass: "border-stone-700/60 bg-stone-800/60 text-stone-200",
 		priceClass: "border-emerald-500/30 bg-emerald-500/10 text-emerald-300",
@@ -32,18 +32,17 @@ const SOURCES: Source[] = [
 		title: "Из каталога",
 		price: "Бесплатно",
 		free: true,
-		text: "Не знаете, за что взяться? Возьмите готовую идею из каталога — мгновенно и без ввода с вашей стороны.",
-		note: `до ${RANDOM_DAILY_LIMIT} раз в сутки`,
+		text: "Не знаете, за что взяться? Возьмите готовую идею из каталога — мгновенно и случайно.",
 		accent: "border-amber-500/30 hover:border-amber-500/50",
 		iconClass: "border-amber-500/25 bg-amber-500/10 text-amber-300",
 		priceClass: "border-emerald-500/30 bg-emerald-500/10 text-emerald-300",
 	},
 	{
 		icon: Fingerprint,
-		title: "Под ваш профиль",
+		title: "Персонализированная",
 		price: `${PRICES.anamnesis} ₽`,
 		free: false,
-		text: "AI задаст несколько вопросов о вашем опыте и интересах — и предложит идеи, которые подходят именно вам.",
+		text: "Система задаст несколько вопросов — и предложит идеи, которые подходят вам.",
 		accent: "border-violet-500/25 hover:border-violet-500/40",
 		iconClass: "border-violet-500/25 bg-violet-500/10 text-violet-300",
 		priceClass: "border-violet-500/30 bg-violet-500/10 text-violet-300",
@@ -61,7 +60,7 @@ export function IdeaSources() {
 				<SectionHeading
 					eyebrow="Откуда брать идеи"
 					title="Идея найдётся, даже если её пока нет"
-					description="Три способа начать — от собственной задумки до подборки, сгенерированной под ваш опыт."
+					description="Три способа начать — от собственной задумки до подборки идей, сгенерированной специально для вас."
 				/>
 
 				<div className="mt-12 grid gap-4 md:grid-cols-3">

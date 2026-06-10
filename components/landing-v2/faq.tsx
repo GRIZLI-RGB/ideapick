@@ -4,7 +4,7 @@ import { useId, useState } from "react";
 import { Reveal } from "@/components/landing-v2/reveal";
 import { SectionHeading } from "@/components/landing-v2/section-heading";
 import { LANDING_FAQ_ITEMS } from "@/lib/landing/faq-items";
-import { ChevronDown, Mail } from "lucide-react";
+import { ChevronDown, Headphones, Mail } from "lucide-react";
 
 const SUPPORT_EMAIL = "support@ideapick.ru";
 
@@ -75,7 +75,7 @@ export function Faq() {
 				<SectionHeading
 					eyebrow="Частые вопросы"
 					title="Коротко о главном"
-					description="Что такое Ideapick, как он считает оценку и сколько это стоит — без походов в поддержку."
+					description="Ответы на часто задаваемые вопросы."
 				/>
 				<div className="mt-10 grid items-start gap-3 lg:grid-cols-2">
 					{columns.map((items, col) => (
@@ -94,10 +94,13 @@ export function Faq() {
 
 				{/* Плашка поддержки */}
 				<Reveal delay={0.1} className="mt-8">
-					<div className="flex flex-col items-center justify-between gap-3 rounded-2xl border border-stone-800/60 bg-stone-900/30 px-5 py-4 sm:flex-row">
-						<p className="text-sm text-stone-400">
-							Не нашли ответ? Напишите нам — отвечаем быстро.
-						</p>
+					<div className="flex flex-col items-center justify-between gap-4 rounded-2xl border border-stone-800/60 bg-stone-900/30 px-5 py-4 sm:flex-row">
+						<div className="flex items-center gap-2.5">
+							<Headphones className="size-4 shrink-0 text-stone-200" />
+							<p className="text-sm text-stone-400">
+								Не нашли ответ? Напишите нам — отвечаем быстро.
+							</p>
+						</div>
 						<a
 							href={`mailto:${SUPPORT_EMAIL}`}
 							className="inline-flex items-center gap-2 rounded-xl border border-stone-700/70 bg-stone-900/60 px-3.5 py-2 text-sm font-medium text-stone-200 transition hover:border-stone-600 hover:text-stone-50"

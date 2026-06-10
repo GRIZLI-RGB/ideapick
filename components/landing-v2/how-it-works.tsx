@@ -18,7 +18,7 @@ const STEPS: Step[] = [
 		icon: FileText,
 		step: "01",
 		title: "Опишите идею",
-		text: "Название и пара предложений. Никаких анкет про аудиторию и нишу — AI выведет это из текста сам.",
+		text: "Название идеи и несколько предложений описания. Никаких дополнительных анкет.",
 		color: "border-amber-500/30 hover:border-amber-500/50",
 		iconBg: "border-amber-500/25 bg-amber-500/10 text-amber-300",
 		numClass: "text-amber-400/35 group-hover:text-amber-300/60",
@@ -27,7 +27,7 @@ const STEPS: Step[] = [
 		icon: ScanSearch,
 		step: "02",
 		title: "Запустите анализ",
-		text: "AI разберёт рынок, конкурентов, монетизацию и реализуемость силами одного человека. Около минуты.",
+		text: "Система разберёт состояние рынка, монетизацию идеи, конкурентов и другие факторы.",
 		color: "border-sky-500/25 hover:border-sky-500/40",
 		iconBg: "border-sky-500/25 bg-sky-500/10 text-sky-300",
 		numClass: "text-sky-400/35 group-hover:text-sky-300/60",
@@ -36,7 +36,7 @@ const STEPS: Step[] = [
 		icon: Gauge,
 		step: "03",
 		title: "Получите вердикт",
-		text: "Одна оценка 0–100 и отчёт из шести разделов. Без воды и простыней текста.",
+		text: "Рейтинговая оценка 0–100 и отчёт из ключевых разделов. Без воды и простыней текста.",
 		color: "border-emerald-500/25 hover:border-emerald-500/40",
 		iconBg: "border-emerald-500/25 bg-emerald-500/10 text-emerald-300",
 		numClass: "text-emerald-400/35 group-hover:text-emerald-300/60",
@@ -45,7 +45,7 @@ const STEPS: Step[] = [
 		icon: Rocket,
 		step: "04",
 		title: "Решайте обоснованно",
-		text: "Браться, доработать формулировку или отложить. Меньше догадок — больше сэкономленных месяцев.",
+		text: "Браться, доработать или отложить. Меньше догадок — больше сэкономленных месяцев.",
 		color: "border-violet-500/25 hover:border-violet-500/40",
 		iconBg: "border-violet-500/25 bg-violet-500/10 text-violet-300",
 		numClass: "text-violet-400/35 group-hover:text-violet-300/60",
@@ -64,7 +64,7 @@ export function HowItWorks() {
 				<SectionHeading
 					eyebrow="Как это работает"
 					title="От сырой идеи до решения — четыре шага"
-					description="Минимум ввода с вашей стороны — максимум обоснованных выводов от системы."
+					description="Минимум ввода от вас — максимум обоснованных выводов от системы."
 				/>
 
 				<div className="mt-14 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -95,30 +95,6 @@ export function HowItWorks() {
 								<p className="mt-2 flex-1 text-sm leading-relaxed text-stone-400">
 									{step.text}
 								</p>
-
-								{/* Коннектор → только на десктопе */}
-								{i < STEPS.length - 1 && (
-									<div
-										className="pointer-events-none absolute -right-3 top-1/2 z-10 hidden -translate-y-1/2 lg:block"
-										aria-hidden
-									>
-										<svg
-											width="24"
-											height="16"
-											viewBox="0 0 24 16"
-											fill="none"
-											className="text-stone-600"
-										>
-											<path
-												d="M0 8h20M14 2l6 6-6 6"
-												stroke="currentColor"
-												strokeWidth="1.5"
-												strokeLinecap="round"
-												strokeLinejoin="round"
-											/>
-										</svg>
-									</div>
-								)}
 							</Reveal>
 						);
 					})}

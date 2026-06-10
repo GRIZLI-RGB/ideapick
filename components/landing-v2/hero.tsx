@@ -36,7 +36,7 @@ export function Hero() {
 						style={{ animationDelay: "0s" }}
 					>
 						<Sparkles className="size-3.5" />
-						AI-оценка идей для соло-основателей
+						AI-оценка идей
 					</div>
 
 					<h1
@@ -54,9 +54,9 @@ export function Hero() {
 						className="animate-fade-up mx-auto mt-5 max-w-xl text-pretty text-base leading-relaxed text-stone-400 sm:text-[1.0625rem] lg:mx-0"
 						style={{ animationDelay: "0.14s" }}
 					>
-						Опишите идею в двух предложениях. AI оценит спрос,
-						конкуренцию, монетизацию и реализуемость в одиночку —
-						и даст вердикт 0–100 с планом первых шагов.
+						Опишите идею в нескольких предложениях. Система оценит спрос,
+						конкуренцию, монетизацию, реализуемость и другие сопутствующие факторы — и
+						выдаст вердикт с оценкой и планом запуска.
 					</p>
 
 					{/* CTA кнопки */}
@@ -84,15 +84,6 @@ export function Hero() {
 							Пример отчёта
 						</a>
 					</div>
-
-					{/* Микрокопия под CTA: снимает конфликт «бесплатно vs 99 ₽» */}
-					<p
-						className="animate-fade-up mt-3 text-xs text-stone-500"
-						style={{ animationDelay: "0.24s" }}
-					>
-						Без карты — бонус +{PRICES.welcomeBonus} ₽ при регистрации
-						покрывает первый анализ
-					</p>
 
 					{/* Stats strip */}
 					<div

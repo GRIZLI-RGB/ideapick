@@ -4,7 +4,7 @@ import { LandingJsonLd } from "@/components/landing-v2/landing-json-ld";
 
 const LANDING_TITLE = "Ideapick — узнайте, стоит ли браться за идею";
 const LANDING_DESCRIPTION =
-	"Опишите идею в двух предложениях — Ideapick оценит спрос, конкуренцию, монетизацию и риски, выдаст вердикт 0–100 и план первых шагов. Первый анализ — бесплатно.";
+	"Опишите идею в нескольких предложениях — Ideapick оценит спрос, конкуренцию, монетизацию и риски, выдаст вердикт 0–100 и план первых шагов. Первый анализ — бесплатно.";
 
 export const metadata: Metadata = {
 	title: LANDING_TITLE,
