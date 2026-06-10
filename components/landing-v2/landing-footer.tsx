@@ -1,26 +1,17 @@
 import Link from "next/link";
 import { BrandMark } from "@/components/brand/brand-mark";
 import { OPERATOR } from "@/lib/legal";
-import { Mail } from "lucide-react";
 
 const SUPPORT_EMAIL = "support@ideapick.ru";
 
-const PRODUCT_LINKS = [
-	{ href: "#how", label: "Как это работает" },
-	{ href: "#example", label: "Пример отчёта" },
-	{ href: "#pricing", label: "Стоимость" },
-	{ href: "#faq", label: "Вопрос-ответ" },
-];
-
-const SERVICE_LINKS = [
-	{ href: "/login", label: "Войти" },
+const FOOTER_LINKS = [
 	{ href: "/terms", label: "Условия использования" },
 	{ href: "/privacy", label: "Конфиденциальность" },
 ];
 
 export function LandingFooter() {
 	return (
-		<footer className="relative px-5 pb-10 pt-16 sm:px-6">
+		<footer className="relative px-5 py-10 sm:px-6">
 			{/* Мягкий разделитель с янтарным акцентом по центру */}
 			<div
 				className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-stone-700/50 to-transparent"
@@ -31,72 +22,46 @@ export function LandingFooter() {
 				aria-hidden
 			/>
 
-			<div className="mx-auto grid max-w-6xl gap-10 sm:grid-cols-[1.4fr_1fr_1fr] sm:gap-8">
-				{/* Бренд-блок */}
-				<div>
-					<Link href="/" className="inline-flex items-center gap-2.5">
-						<BrandMark size={28} />
+			<div className="mx-auto max-w-6xl">
+				<div className="flex flex-col items-center gap-5 sm:flex-row sm:justify-between">
+					<Link
+						href="/"
+						className="inline-flex items-center gap-2.5 transition hover:opacity-90"
+					>
+						<BrandMark size={26} />
 						<span className="text-[0.9375rem] font-semibold tracking-tight text-stone-100">
 							Ideapick
 						</span>
 					</Link>
-					<p className="mt-4 max-w-xs text-sm leading-relaxed text-stone-400">
-						Проверка бизнес-идей с помощью AI: вердикт 0–100 и план
-						первых шагов за минуту.
-					</p>
-					<a
-						href={`mailto:${SUPPORT_EMAIL}`}
-						className="mt-5 inline-flex items-center gap-2 rounded-xl border border-stone-800 bg-stone-900/50 px-3.5 py-2 text-sm text-stone-300 transition hover:border-stone-700 hover:text-stone-100"
+
+					<nav
+						aria-label="Футер"
+						className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2"
 					>
-						<Mail className="size-4 text-amber-400/80" />
-						{SUPPORT_EMAIL}
-					</a>
+						{FOOTER_LINKS.map((link) => (
+							<Link
+								key={link.href}
+								href={link.href}
+								className="text-sm text-stone-400 transition hover:text-stone-100"
+							>
+								{link.label}
+							</Link>
+						))}
+						<a
+							href={`mailto:${SUPPORT_EMAIL}`}
+							className="text-sm text-stone-400 transition hover:text-stone-100"
+						>
+							{SUPPORT_EMAIL}
+						</a>
+					</nav>
 				</div>
 
-				{/* Разделы */}
-				<nav aria-label="Разделы">
-					<h3 className="text-xs font-semibold uppercase tracking-widest text-stone-500">
-						Разделы
-					</h3>
-					<ul className="mt-4 space-y-2.5">
-						{PRODUCT_LINKS.map((link) => (
-							<li key={link.href}>
-								<a
-									href={link.href}
-									className="text-sm text-stone-400 transition hover:text-stone-100"
-								>
-									{link.label}
-								</a>
-							</li>
-						))}
-					</ul>
-				</nav>
-
-				{/* Сервис */}
-				<nav aria-label="Сервис">
-					<h3 className="text-xs font-semibold uppercase tracking-widest text-stone-500">
-						Сервис
-					</h3>
-					<ul className="mt-4 space-y-2.5">
-						{SERVICE_LINKS.map((link) => (
-							<li key={link.href}>
-								<Link
-									href={link.href}
-									className="text-sm text-stone-400 transition hover:text-stone-100"
-								>
-									{link.label}
-								</Link>
-							</li>
-						))}
-					</ul>
-				</nav>
-			</div>
-
-			<div className="mx-auto mt-12 flex max-w-6xl flex-col gap-1.5 border-t border-stone-800/60 pt-6 text-xs text-stone-400 sm:flex-row sm:items-center sm:justify-between">
-				<p>© {new Date().getFullYear()} Ideapick</p>
-				<p>
-					{OPERATOR.name} · ИНН {OPERATOR.inn}
-				</p>
+				<div className="mt-7 flex flex-col items-center gap-1.5 border-t border-stone-800/60 pt-5 text-xs text-stone-500 sm:flex-row sm:justify-between">
+					<p>© {new Date().getFullYear()} Ideapick</p>
+					<p>
+						{OPERATOR.name} · ИНН {OPERATOR.inn}
+					</p>
+				</div>
 			</div>
 		</footer>
 	);

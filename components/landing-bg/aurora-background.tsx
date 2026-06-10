@@ -8,7 +8,7 @@ export function AuroraBackground() {
 		<div className="absolute inset-0 overflow-hidden" aria-hidden>
 			<div className="animate-aurora-drift absolute -left-[20%] top-[-10%] h-[70vh] w-[70vw] rounded-full bg-[radial-gradient(ellipse,rgb(245_158_11/0.32)_0%,transparent_68%)] blur-3xl will-change-transform" />
 			<div
-				className="animate-aurora-drift-reverse absolute -right-[15%] top-[5%] h-[55vh] w-[55vw] rounded-full bg-[radial-gradient(ellipse,rgb(251_191_36/0.14)_0%,transparent_70%)] blur-3xl will-change-transform"
+				className="animate-aurora-drift-reverse absolute -right-[15%] top-[5%] h-[55vh] w-[55vw] rounded-full bg-[radial-gradient(ellipse,rgb(251_191_36/0.08)_0%,transparent_70%)] blur-3xl will-change-transform"
 				style={{ animationDelay: "-4s" }}
 			/>
 			<div

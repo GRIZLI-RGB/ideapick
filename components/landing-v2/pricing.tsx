@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Reveal } from "@/components/landing-v2/reveal";
 import { SectionHeading } from "@/components/landing-v2/section-heading";
 import { PRICES, RANDOM_DAILY_LIMIT } from "@/lib/ideas/constants";
-import { ArrowRight, Check, Gift, Wallet } from "lucide-react";
+import { ArrowRight, Check, Gift } from "lucide-react";
 
 const ACTIONS: { label: string; price: string; hint: string; free?: boolean }[] = [
 	{
@@ -32,6 +32,13 @@ const ACTIONS: { label: string; price: string; hint: string; free?: boolean }[] 
 		hint:  "Без ограничений",
 		free:  true,
 	},
+];
+
+/** Шаги старта для бонус-карты */
+const START_STEPS = [
+	"Войдите через Google или по почте — без пароля",
+	"Получите бонус на баланс автоматически",
+	"Запустите первый анализ — его покроет бонус",
 ];
 
 export function Pricing() {
@@ -64,34 +71,42 @@ export function Pricing() {
 								Старт без вложений
 							</span>
 
-							{/* Центрируем основной контент в свободном пространстве карточки */}
-							<div className="flex flex-1 flex-col justify-center py-6">
-								<div className="flex items-end gap-2">
-									<span className="bg-gradient-to-r from-amber-200 to-amber-400 bg-clip-text text-6xl font-bold tracking-tight text-transparent">
-										+{PRICES.welcomeBonus} ₽
-									</span>
-									<span className="pb-2 text-sm text-stone-400">на баланс</span>
-								</div>
-
-								<p className="mt-3 text-sm leading-relaxed text-stone-300">
-									Дарим {PRICES.welcomeBonus} ₽ при регистрации — этого хватает
-									на первый полный AI-анализ. Попробуйте сервис, не доставая
-									карту.
-								</p>
+							<div className="mt-5 flex items-end gap-2">
+								<span className="bg-gradient-to-r from-amber-200 to-amber-400 bg-clip-text text-5xl font-bold tracking-tight text-transparent">
+									+{PRICES.welcomeBonus} ₽
+								</span>
+								<span className="pb-1.5 text-sm text-stone-400">на баланс</span>
 							</div>
 
-							<Link
-								href="/login"
-								className="group relative inline-flex w-full items-center justify-center gap-2 overflow-hidden rounded-xl bg-amber-500 px-6 py-3.5 text-sm font-semibold text-stone-950 shadow-lg shadow-amber-500/25 transition hover:bg-amber-400"
-							>
-								<span className="pointer-events-none absolute inset-0 -translate-x-full skew-x-[-20deg] bg-white/20 transition-transform duration-700 group-hover:translate-x-[200%]" aria-hidden />
-								Проверить идею бесплатно
-								<ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
-							</Link>
-
-							<p className="mt-3 text-center text-xs text-stone-400">
-								Вход через Google или по ссылке из письма — без пароля
+							<p className="mt-3 text-sm leading-relaxed text-stone-300">
+								Дарим {PRICES.welcomeBonus} ₽ каждому новому аккаунту.
+								Попробуйте сервис, не доставая карту.
 							</p>
+
+							{/* Мини-шаги «как начать» — заполняют высоту карты полезным контентом */}
+							<ol className="mt-5 space-y-3">
+								{START_STEPS.map((step, i) => (
+									<li key={step} className="flex items-start gap-3">
+										<span className="mt-px flex size-5 shrink-0 items-center justify-center rounded-full border border-amber-500/30 bg-amber-500/10 text-[10px] font-semibold tabular-nums text-amber-300">
+											{i + 1}
+										</span>
+										<span className="text-sm leading-snug text-stone-300">
+											{step}
+										</span>
+									</li>
+								))}
+							</ol>
+
+							<div className="mt-auto pt-6">
+								<Link
+									href="/login"
+									className="group relative inline-flex w-full items-center justify-center gap-2 overflow-hidden rounded-xl bg-amber-500 px-6 py-3.5 text-sm font-semibold text-stone-950 shadow-lg shadow-amber-500/25 transition hover:bg-amber-400"
+								>
+									<span className="pointer-events-none absolute inset-0 -translate-x-full skew-x-[-20deg] bg-white/20 transition-transform duration-700 group-hover:translate-x-[200%]" aria-hidden />
+									Проверить идею бесплатно
+									<ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
+								</Link>
+							</div>
 						</div>
 					</Reveal>
 

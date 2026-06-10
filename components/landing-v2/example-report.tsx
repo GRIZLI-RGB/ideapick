@@ -116,13 +116,14 @@ export function ExampleReport() {
 											key={section.key}
 											className="flex flex-col rounded-2xl border border-stone-800/60 bg-stone-950/40 p-4.5 transition duration-300 hover:border-stone-700/70"
 										>
-											<div className="flex items-center justify-between gap-2">
+											{/* flex-wrap: на узких экранах чип переносится под заголовок, не сжимая его */}
+											<div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1.5">
 												<span className="flex items-center gap-2 text-sm font-semibold text-stone-100">
-													<Icon className="size-4 text-stone-500" />
+													<Icon className="size-4 shrink-0 text-stone-500" />
 													{section.label}
 												</span>
 												<span
-													className={`shrink-0 rounded-full border px-2 py-0.5 text-[11px] font-medium ${sample.chipClass}`}
+													className={`whitespace-nowrap rounded-full border px-2 py-0.5 text-[11px] font-medium ${sample.chipClass}`}
 												>
 													{sample.chip}
 												</span>

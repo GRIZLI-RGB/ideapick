@@ -10,6 +10,7 @@ type Step = {
 	text: string;
 	color: string;
 	iconBg: string;
+	numClass: string;
 };
 
 const STEPS: Step[] = [
@@ -20,6 +21,7 @@ const STEPS: Step[] = [
 		text: "Название и пара предложений. Никаких анкет про аудиторию и нишу — AI выведет это из текста сам.",
 		color: "border-amber-500/30 hover:border-amber-500/50",
 		iconBg: "border-amber-500/25 bg-amber-500/10 text-amber-300",
+		numClass: "text-amber-400/35 group-hover:text-amber-300/60",
 	},
 	{
 		icon: ScanSearch,
@@ -28,6 +30,7 @@ const STEPS: Step[] = [
 		text: "AI разберёт рынок, конкурентов, монетизацию и реализуемость силами одного человека. Около минуты.",
 		color: "border-sky-500/25 hover:border-sky-500/40",
 		iconBg: "border-sky-500/25 bg-sky-500/10 text-sky-300",
+		numClass: "text-sky-400/35 group-hover:text-sky-300/60",
 	},
 	{
 		icon: Gauge,
@@ -36,6 +39,7 @@ const STEPS: Step[] = [
 		text: "Одна оценка 0–100 и отчёт из шести разделов. Без воды и простыней текста.",
 		color: "border-emerald-500/25 hover:border-emerald-500/40",
 		iconBg: "border-emerald-500/25 bg-emerald-500/10 text-emerald-300",
+		numClass: "text-emerald-400/35 group-hover:text-emerald-300/60",
 	},
 	{
 		icon: Rocket,
@@ -44,6 +48,7 @@ const STEPS: Step[] = [
 		text: "Браться, доработать формулировку или отложить. Меньше догадок — больше сэкономленных месяцев.",
 		color: "border-violet-500/25 hover:border-violet-500/40",
 		iconBg: "border-violet-500/25 bg-violet-500/10 text-violet-300",
+		numClass: "text-violet-400/35 group-hover:text-violet-300/60",
 	},
 ];
 
@@ -77,7 +82,9 @@ export function HowItWorks() {
 									>
 										<Icon className="size-5" />
 									</span>
-									<span className="font-mono text-3xl font-bold tabular-nums text-stone-800/60 transition-colors duration-300 group-hover:text-stone-700/80">
+									<span
+										className={`font-mono text-3xl font-bold tabular-nums transition-colors duration-300 ${step.numClass}`}
+									>
 										{step.step}
 									</span>
 								</div>
@@ -100,7 +107,7 @@ export function HowItWorks() {
 											height="16"
 											viewBox="0 0 24 16"
 											fill="none"
-											className="text-stone-700"
+											className="text-stone-600"
 										>
 											<path
 												d="M0 8h20M14 2l6 6-6 6"

@@ -18,7 +18,7 @@ const STATS = [
 
 export function Hero() {
 	return (
-		<section className="relative px-5 pb-16 pt-28 sm:px-6 sm:pt-32 lg:pb-20 lg:pt-36">
+		<section className="relative px-5 pb-16 pt-32 sm:px-6 sm:pt-36 lg:pb-20 lg:pt-44">
 			{/* Декоративные кольца за hero */}
 			<div
 				className="pointer-events-none absolute left-1/2 top-16 -z-10 -translate-x-1/2"
