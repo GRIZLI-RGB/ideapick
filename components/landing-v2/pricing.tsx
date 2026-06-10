@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Reveal } from "@/components/landing-v2/reveal";
 import { SectionHeading } from "@/components/landing-v2/section-heading";
 import { PRICES, RANDOM_DAILY_LIMIT } from "@/lib/ideas/constants";
-import { ArrowRight, Check, Gift } from "lucide-react";
+import { ArrowRight, Check, Gift, Lock, ShieldCheck, Undo2 } from "lucide-react";
 
 const ACTIONS: { label: string; price: string; hint: string; free?: boolean }[] = [
 	{
@@ -32,6 +32,13 @@ const ACTIONS: { label: string; price: string; hint: string; free?: boolean }[] 
 		hint:  "Без ограничений",
 		free:  true,
 	},
+];
+
+/** Гарантии — снимают тревогу оплаты в момент решения */
+const TRUST_ITEMS = [
+	{ icon: ShieldCheck, label: "Оплата через ЮKassa, чек на почту" },
+	{ icon: Undo2,       label: "Сбой анализа — деньги вернутся на баланс" },
+	{ icon: Lock,        label: "Ваши идеи видны только вам" },
 ];
 
 /** Шаги старта для бонус-карты */
@@ -153,6 +160,24 @@ export function Pricing() {
 						</ul>
 					</Reveal>
 				</div>
+
+				{/* Trust-полоса под прайсом */}
+				<Reveal delay={0.12} className="mt-6">
+					<div className="flex flex-col items-start gap-3 rounded-2xl border border-stone-800/60 bg-stone-900/30 px-5 py-4 sm:flex-row sm:items-center sm:justify-center sm:gap-8">
+						{TRUST_ITEMS.map((item) => {
+							const Icon = item.icon;
+							return (
+								<span
+									key={item.label}
+									className="inline-flex items-center gap-2 text-xs text-stone-400 sm:text-[0.8125rem]"
+								>
+									<Icon className="size-4 shrink-0 text-emerald-400/80" />
+									{item.label}
+								</span>
+							);
+						})}
+					</div>
+				</Reveal>
 			</div>
 		</section>
 	);

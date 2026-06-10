@@ -36,7 +36,7 @@ export function Hero() {
 						style={{ animationDelay: "0s" }}
 					>
 						<Sparkles className="size-3.5" />
-						AI-оценка идей
+						AI-оценка идей для соло-основателей
 					</div>
 
 					<h1
@@ -45,11 +45,9 @@ export function Hero() {
 					>
 						<span className="bg-gradient-to-r from-amber-300 via-amber-400 to-amber-500 bg-clip-text text-transparent">
 							Стоит ли браться за идею?
-						</span>
-						<br />
-						Узнайте это до того, как
-						<br />
-						потратите на неё месяцы
+						</span>{" "}
+						<br className="hidden sm:block" />
+						Узнайте это до того, как потратите на неё месяцы
 					</h1>
 
 					<p
@@ -57,8 +55,8 @@ export function Hero() {
 						style={{ animationDelay: "0.14s" }}
 					>
 						Опишите идею в двух предложениях. AI оценит спрос,
-						конкуренцию, монетизацию и риски — и даст вердикт{" "}
-						с планом первых шагов.
+						конкуренцию, монетизацию и реализуемость в одиночку —
+						и даст вердикт 0–100 с планом первых шагов.
 					</p>
 
 					{/* CTA кнопки */}
@@ -87,9 +85,18 @@ export function Hero() {
 						</a>
 					</div>
 
+					{/* Микрокопия под CTA: снимает конфликт «бесплатно vs 99 ₽» */}
+					<p
+						className="animate-fade-up mt-3 text-xs text-stone-500"
+						style={{ animationDelay: "0.24s" }}
+					>
+						Без карты — бонус +{PRICES.welcomeBonus} ₽ при регистрации
+						покрывает первый анализ
+					</p>
+
 					{/* Stats strip */}
 					<div
-						className="animate-fade-up mt-7 flex flex-col gap-2.5 sm:flex-row sm:flex-wrap sm:gap-4 lg:justify-start"
+						className="animate-fade-up mt-7 flex flex-col items-center gap-2.5 sm:flex-row sm:flex-wrap sm:justify-center sm:gap-4 lg:justify-start"
 						style={{ animationDelay: "0.28s" }}
 					>
 						{STATS.map((s) => {

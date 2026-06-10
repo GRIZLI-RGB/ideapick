@@ -56,6 +56,11 @@ export function FinalCta() {
 								<ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
 							</Link>
 						</div>
+
+						<p className="mt-4 text-xs text-stone-500">
+							Без карты · без подписки · при сбое анализа деньги
+							возвращаются на баланс
+						</p>
 					</div>
 				</div>
 			</Reveal>

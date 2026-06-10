@@ -107,10 +107,10 @@ export function LandingNav() {
 						</Link>
 						<Link
 							href="/login"
-							className="group hidden items-center gap-1.5 rounded-xl bg-amber-500 px-4 py-2.5 text-sm font-semibold text-stone-950 shadow-md shadow-amber-500/20 transition hover:bg-amber-400 sm:inline-flex"
+							className="group inline-flex items-center gap-1.5 rounded-xl bg-amber-500 px-3 py-2 text-sm font-semibold text-stone-950 shadow-md shadow-amber-500/20 transition hover:bg-amber-400 sm:px-4 sm:py-2.5"
 						>
 							Проверить идею
-							<ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
+							<ArrowRight className="hidden size-4 transition-transform group-hover:translate-x-0.5 sm:block" />
 						</Link>
 						<button
 							ref={toggleRef}
@@ -152,6 +152,13 @@ export function LandingNav() {
 						{link.label}
 					</a>
 				))}
+				<Link
+					href="/login"
+					onClick={() => setOpen(false)}
+					className="block rounded-xl px-4 py-3 text-sm font-medium text-stone-300 transition hover:bg-stone-900 hover:text-stone-100"
+				>
+					Войти
+				</Link>
 				<Link
 					href="/login"
 					onClick={() => setOpen(false)}
