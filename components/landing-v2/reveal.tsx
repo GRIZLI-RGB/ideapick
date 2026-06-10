@@ -1,6 +1,29 @@
 "use client";
 
-import { useEffect, useRef, useState, type ReactNode, type CSSProperties } from "react";
+import {
+	useEffect,
+	useRef,
+	useState,
+	useSyncExternalStore,
+	type ReactNode,
+	type CSSProperties,
+} from "react";
+
+const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
+
+function subscribeReducedMotion(callback: () => void) {
+	const mq = window.matchMedia(REDUCED_MOTION_QUERY);
+	mq.addEventListener("change", callback);
+	return () => mq.removeEventListener("change", callback);
+}
+
+function useReducedMotion() {
+	return useSyncExternalStore(
+		subscribeReducedMotion,
+		() => window.matchMedia(REDUCED_MOTION_QUERY).matches,
+		() => false,
+	);
+}
 
 type RevealProps = {
 	children: ReactNode;
@@ -18,14 +41,10 @@ type RevealProps = {
 export function Reveal({ children, className, delay = 0, y = 18 }: RevealProps) {
 	const ref = useRef<HTMLDivElement>(null);
 	const [visible, setVisible] = useState(false);
-	const [reduced, setReduced] = useState(false);
+	const reduced = useReducedMotion();
 
 	useEffect(() => {
-		if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-			setReduced(true);
-			setVisible(true);
-			return;
-		}
+		if (reduced) return;
 		const el = ref.current;
 		if (!el) return;
 		const observer = new IntersectionObserver(
@@ -39,7 +58,7 @@ export function Reveal({ children, className, delay = 0, y = 18 }: RevealProps) 
 		);
 		observer.observe(el);
 		return () => observer.disconnect();
-	}, []);
+	}, [reduced]);
 
 	const style: CSSProperties = reduced
 		? {}

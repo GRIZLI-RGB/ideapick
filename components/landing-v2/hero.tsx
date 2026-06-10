@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { AnalysisPreview } from "@/components/landing-v2/analysis-preview";
+import { PRICES } from "@/lib/ideas/constants";
 import {
 	ArrowRight,
 	BarChart3,
@@ -12,7 +13,7 @@ import {
 const STATS = [
 	{ icon: Zap, label: "Вердикт за ~1 минуту" },
 	{ icon: BarChart3, label: "6 факторов в одном отчёте" },
-	{ icon: Wallet, label: "Без подписки — от 99 ₽ за анализ" },
+	{ icon: Wallet, label: `Без подписки — ${PRICES.analysis} ₽ за анализ` },
 ];
 
 export function Hero() {
@@ -35,7 +36,7 @@ export function Hero() {
 						style={{ animationDelay: "0s" }}
 					>
 						<Sparkles className="size-3.5" />
-						AI-оценка идей для разработчиков и соло-фаундеров
+						AI-оценка идей
 					</div>
 
 					<h1
@@ -46,9 +47,9 @@ export function Hero() {
 							Стоит ли браться за идею?
 						</span>
 						<br />
-						Узнайте это заранее —
+						Узнайте это до того, как
 						<br />
-						без траты своего времени
+						потратите на неё месяцы
 					</h1>
 
 					<p
@@ -56,11 +57,8 @@ export function Hero() {
 						style={{ animationDelay: "0.14s" }}
 					>
 						Опишите идею в двух предложениях. AI оценит спрос,
-						конкуренцию, монетизацию и риски — и вернёт вердикт{" "}
-						<span className="font-semibold text-stone-200">
-							0–100
-						</span>{" "}
-						с планом первых шагов. Честно, даже если идея слабая.
+						конкуренцию, монетизацию и риски — и даст вердикт{" "}
+						с планом первых шагов.
 					</p>
 
 					{/* CTA кнопки */}
@@ -89,14 +87,6 @@ export function Hero() {
 						</a>
 					</div>
 
-					<p
-						className="animate-fade-up mt-3.5 text-xs text-stone-500"
-						style={{ animationDelay: "0.25s" }}
-					>
-						+100 ₽ при регистрации — хватает на первый полный
-						анализ.
-					</p>
-
 					{/* Stats strip */}
 					<div
 						className="animate-fade-up mt-7 flex flex-col gap-2.5 sm:flex-row sm:flex-wrap sm:gap-4 lg:justify-start"
@@ -107,7 +97,7 @@ export function Hero() {
 							return (
 								<span
 									key={s.label}
-									className="inline-flex items-center gap-1.5 text-xs text-stone-500"
+									className="inline-flex items-center gap-1.5 text-xs text-stone-400"
 								>
 									<Icon className="size-3.5 text-amber-500/70" />
 									{s.label}

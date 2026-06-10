@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Reveal } from "@/components/landing-v2/reveal";
+import { PRICES } from "@/lib/ideas/constants";
 import { ArrowRight, Gift } from "lucide-react";
 
 export function FinalCta() {
@@ -26,7 +27,7 @@ export function FinalCta() {
 					<div className="relative">
 						<span className="inline-flex items-center gap-2 rounded-full border border-amber-500/30 bg-amber-500/10 px-4 py-1.5 text-xs font-semibold text-amber-200">
 							<Gift className="size-3.5" />
-							+100 ₽ при регистрации
+							+{PRICES.welcomeBonus} ₽ при регистрации
 						</span>
 
 						<h2 className="mt-5 text-balance text-3xl font-bold tracking-tight text-stone-50 sm:text-4xl lg:text-[2.6rem]">
@@ -38,8 +39,8 @@ export function FinalCta() {
 						</h2>
 
 						<p className="mx-auto mt-4 max-w-lg text-pretty text-base leading-relaxed text-stone-400">
-							Зарегистрируйтесь, получите 100 ₽ на баланс и запустите первый
-							AI-анализ без вложений.
+							Зарегистрируйтесь, получите {PRICES.welcomeBonus} ₽ на баланс
+							и запустите первый AI-анализ без вложений.
 						</p>
 
 						<div className="mt-8 flex justify-center">
@@ -55,11 +56,6 @@ export function FinalCta() {
 								<ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
 							</Link>
 						</div>
-
-						<p className="mt-4 text-xs text-stone-500">
-							Без подписки · Карта не нужна для старта · Вход через Google
-							или почту
-						</p>
 					</div>
 				</div>
 			</Reveal>

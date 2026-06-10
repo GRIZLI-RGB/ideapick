@@ -4,6 +4,7 @@ import { HowItWorks } from "@/components/landing-v2/how-it-works";
 import { IdeaSources } from "@/components/landing-v2/idea-sources";
 import { ExampleReport } from "@/components/landing-v2/example-report";
 import { ScoreBands } from "@/components/landing-v2/score-bands";
+import { WhyNotChatGpt } from "@/components/landing-v2/why-not-chatgpt";
 import { Pricing } from "@/components/landing-v2/pricing";
 import { Faq } from "@/components/landing-v2/faq";
 import { FinalCta } from "@/components/landing-v2/final-cta";
@@ -20,6 +21,7 @@ export function LandingV2Content() {
 				<IdeaSources />
 				<ExampleReport />
 				<ScoreBands />
+				<WhyNotChatGpt />
 				<Pricing />
 				<Faq />
 				<FinalCta />

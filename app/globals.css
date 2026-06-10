@@ -97,8 +97,17 @@
 	animation: land-aurora-drift-reverse 22s ease-in-out infinite;
 }
 
+/* Дуга ScoreRing: дорисовка при входе в viewport */
+@utility score-ring-arc {
+	transition: stroke-dasharray 0.9s cubic-bezier(0.33, 1, 0.68, 1);
+}
+
 /* Уважение к prefers-reduced-motion: декоративные анимации отключаются */
 @media (prefers-reduced-motion: reduce) {
+	.score-ring-arc {
+		transition: none;
+	}
+
 	.animate-fade-up,
 	.animate-fade-in,
 	.animate-float,

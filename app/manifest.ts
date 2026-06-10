@@ -6,7 +6,7 @@ export default function manifest(): MetadataRoute.Manifest {
 		short_name: "Ideapick",
 		description:
 			"AI-анализ бизнес-идей: спрос, конкуренция и монетизация в одном отчёте.",
-		start_url: "/login",
+		start_url: "/app/ideas",
 		display: "standalone",
 		background_color: "#0c0a09",
 		theme_color: "#0c0a09",

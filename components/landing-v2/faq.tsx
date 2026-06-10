@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
 import { Reveal } from "@/components/landing-v2/reveal";
 import { SectionHeading } from "@/components/landing-v2/section-heading";
 import { LANDING_FAQ_ITEMS } from "@/lib/landing/faq-items";
@@ -8,6 +8,7 @@ import { ChevronDown } from "lucide-react";
 
 function FaqItem({ q, a, index }: { q: string; a: string; index: number }) {
 	const [open, setOpen] = useState(false);
+	const panelId = useId();
 	return (
 		<Reveal
 			delay={index * 0.05}
@@ -18,6 +19,7 @@ function FaqItem({ q, a, index }: { q: string; a: string; index: number }) {
 				onClick={() => setOpen((v) => !v)}
 				className="flex w-full cursor-pointer items-center justify-between gap-4 px-5 py-4 text-left"
 				aria-expanded={open}
+				aria-controls={panelId}
 			>
 				<span className="text-sm font-medium text-stone-100 sm:text-base">
 					{q}
@@ -30,6 +32,7 @@ function FaqItem({ q, a, index }: { q: string; a: string; index: number }) {
 			</button>
 			{/* grid-rows аккордеон: контент любой высоты не обрезается */}
 			<div
+				id={panelId}
 				className="grid transition-[grid-template-rows,opacity] duration-300 ease-in-out"
 				style={{
 					gridTemplateRows: open ? "1fr" : "0fr",

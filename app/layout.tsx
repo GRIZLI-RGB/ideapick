@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist } from "next/font/google";
+import { YandexMetrika } from "@/components/site/yandex-metrika";
 import "./globals.css";
 
 const geist = Geist({
@@ -50,6 +51,7 @@ export default function RootLayout({
 				className={`${geist.className} min-h-dvh bg-stone-950 text-stone-100 antialiased`}
 			>
 				{children}
+				<YandexMetrika />
 			</body>
 		</html>
 	);

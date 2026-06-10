@@ -32,7 +32,7 @@ const SOURCES: Source[] = [
 		title: "Из каталога",
 		price: "Бесплатно",
 		free: true,
-		text: "Не знаете, за что взяться? Возьмите готовую идею из каталога — мгновенно. Идеи не повторяются: каждый раз новая.",
+		text: "Не знаете, за что взяться? Возьмите готовую идею из каталога — мгновенно и без ввода с вашей стороны.",
 		note: `до ${RANDOM_DAILY_LIMIT} раз в сутки`,
 		accent: "border-amber-500/30 hover:border-amber-500/50",
 		iconClass: "border-amber-500/25 bg-amber-500/10 text-amber-300",
@@ -93,7 +93,7 @@ export function IdeaSources() {
 									{s.text}
 								</p>
 								{s.note ? (
-									<p className="mt-3 text-xs font-medium text-stone-500">
+									<p className="mt-3 text-xs font-medium text-stone-400">
 										{s.note}
 									</p>
 								) : null}

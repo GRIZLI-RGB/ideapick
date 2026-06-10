@@ -1,19 +1,20 @@
 import Link from "next/link";
 import { BrandMark } from "@/components/brand/brand-mark";
+import { OPERATOR } from "@/lib/legal";
 import { Mail } from "lucide-react";
 
 const SUPPORT_EMAIL = "support@ideapick.ru";
 
 const PRODUCT_LINKS = [
-	{ href: "#how",     label: "Как это работает" },
+	{ href: "#how", label: "Как это работает" },
 	{ href: "#example", label: "Пример отчёта" },
-	{ href: "#pricing", label: "Цены" },
-	{ href: "#faq",     label: "Вопросы" },
+	{ href: "#pricing", label: "Стоимость" },
+	{ href: "#faq", label: "Вопрос-ответ" },
 ];
 
 const SERVICE_LINKS = [
-	{ href: "/login",   label: "Войти" },
-	{ href: "/terms",   label: "Условия использования" },
+	{ href: "/login", label: "Войти" },
+	{ href: "/terms", label: "Условия использования" },
 	{ href: "/privacy", label: "Конфиденциальность" },
 ];
 
@@ -21,8 +22,14 @@ export function LandingFooter() {
 	return (
 		<footer className="relative px-5 pb-10 pt-16 sm:px-6">
 			{/* Мягкий разделитель с янтарным акцентом по центру */}
-			<div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-stone-700/50 to-transparent" aria-hidden />
-			<div className="pointer-events-none absolute left-1/2 top-0 h-px w-48 -translate-x-1/2 bg-gradient-to-r from-transparent via-amber-500/40 to-transparent" aria-hidden />
+			<div
+				className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-stone-700/50 to-transparent"
+				aria-hidden
+			/>
+			<div
+				className="pointer-events-none absolute left-1/2 top-0 h-px w-48 -translate-x-1/2 bg-gradient-to-r from-transparent via-amber-500/40 to-transparent"
+				aria-hidden
+			/>
 
 			<div className="mx-auto grid max-w-6xl gap-10 sm:grid-cols-[1.4fr_1fr_1fr] sm:gap-8">
 				{/* Бренд-блок */}
@@ -34,8 +41,8 @@ export function LandingFooter() {
 						</span>
 					</Link>
 					<p className="mt-4 max-w-xs text-sm leading-relaxed text-stone-400">
-						Проверка бизнес-идей с помощью AI: вердикт 0–100 и план первых
-						шагов за минуту.
+						Проверка бизнес-идей с помощью AI: вердикт 0–100 и план
+						первых шагов за минуту.
 					</p>
 					<a
 						href={`mailto:${SUPPORT_EMAIL}`}
@@ -85,9 +92,11 @@ export function LandingFooter() {
 				</nav>
 			</div>
 
-			<div className="mx-auto mt-12 flex max-w-6xl flex-col gap-1.5 border-t border-stone-800/60 pt-6 text-xs text-stone-600 sm:flex-row sm:items-center sm:justify-between">
-				<p>© {new Date().getFullYear()} Ideapick · ideapick.ru</p>
-				<p>Оценка AI — рекомендация, не инвестиционный совет.</p>
+			<div className="mx-auto mt-12 flex max-w-6xl flex-col gap-1.5 border-t border-stone-800/60 pt-6 text-xs text-stone-400 sm:flex-row sm:items-center sm:justify-between">
+				<p>© {new Date().getFullYear()} Ideapick</p>
+				<p>
+					{OPERATOR.name} · ИНН {OPERATOR.inn}
+				</p>
 			</div>
 		</footer>
 	);

@@ -82,7 +82,7 @@ export function ScoreBands() {
 					<div className="relative h-2.5 w-full overflow-hidden rounded-full bg-[linear-gradient(90deg,var(--color-rose-500)_0%,var(--color-orange-400)_36%,var(--color-amber-400)_60%,var(--color-emerald-400)_88%)]">
 						<div className="absolute inset-0 bg-gradient-to-r from-black/10 to-transparent" />
 					</div>
-					<div className="mt-2 flex justify-between text-[11px] text-stone-600">
+					<div className="mt-2 flex justify-between text-[11px] text-stone-400">
 						<span>0</span>
 						<span>30</span>
 						<span>50</span>

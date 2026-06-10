@@ -34,8 +34,6 @@ const ACTIONS: { label: string; price: string; hint: string; free?: boolean }[] 
 	},
 ];
 
-const TOPUP_PRESETS = [100, 300, 500, 1000];
-
 export function Pricing() {
 	return (
 		<section
@@ -60,35 +58,38 @@ export function Pricing() {
 						<div className="pointer-events-none absolute -right-12 -top-12 size-48 rounded-full bg-amber-500/20 blur-3xl" aria-hidden />
 						<div className="pointer-events-none absolute -bottom-8 left-8 size-32 rounded-full bg-amber-500/10 blur-2xl" aria-hidden />
 
-						<div className="relative">
-							<span className="inline-flex items-center gap-2 rounded-full border border-amber-500/35 bg-amber-500/12 px-3.5 py-1.5 text-xs font-semibold text-amber-200">
+						<div className="relative flex h-full flex-col">
+							<span className="inline-flex items-center gap-2 self-start rounded-full border border-amber-500/35 bg-amber-500/12 px-3.5 py-1.5 text-xs font-semibold text-amber-200">
 								<Gift className="size-3.5" />
 								Старт без вложений
 							</span>
 
-							<div className="mt-6 flex items-end gap-2">
-								<span className="bg-gradient-to-r from-amber-200 to-amber-400 bg-clip-text text-6xl font-bold tracking-tight text-transparent">
-									+{PRICES.welcomeBonus} ₽
-								</span>
-								<span className="pb-2 text-sm text-stone-400">на баланс</span>
-							</div>
+							{/* Центрируем основной контент в свободном пространстве карточки */}
+							<div className="flex flex-1 flex-col justify-center py-6">
+								<div className="flex items-end gap-2">
+									<span className="bg-gradient-to-r from-amber-200 to-amber-400 bg-clip-text text-6xl font-bold tracking-tight text-transparent">
+										+{PRICES.welcomeBonus} ₽
+									</span>
+									<span className="pb-2 text-sm text-stone-400">на баланс</span>
+								</div>
 
-							<p className="mt-3 text-sm leading-relaxed text-stone-300">
-								Дарим {PRICES.welcomeBonus} ₽ при регистрации — этого хватает
-								на первый полный AI-анализ. Попробуйте сервис, не доставая
-								карту.
-							</p>
+								<p className="mt-3 text-sm leading-relaxed text-stone-300">
+									Дарим {PRICES.welcomeBonus} ₽ при регистрации — этого хватает
+									на первый полный AI-анализ. Попробуйте сервис, не доставая
+									карту.
+								</p>
+							</div>
 
 							<Link
 								href="/login"
-								className="group relative mt-7 inline-flex w-full items-center justify-center gap-2 overflow-hidden rounded-xl bg-amber-500 px-6 py-3.5 text-sm font-semibold text-stone-950 shadow-lg shadow-amber-500/25 transition hover:bg-amber-400"
+								className="group relative inline-flex w-full items-center justify-center gap-2 overflow-hidden rounded-xl bg-amber-500 px-6 py-3.5 text-sm font-semibold text-stone-950 shadow-lg shadow-amber-500/25 transition hover:bg-amber-400"
 							>
 								<span className="pointer-events-none absolute inset-0 -translate-x-full skew-x-[-20deg] bg-white/20 transition-transform duration-700 group-hover:translate-x-[200%]" aria-hidden />
 								Проверить идею бесплатно
 								<ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
 							</Link>
 
-							<p className="mt-3 text-center text-xs text-stone-500">
+							<p className="mt-3 text-center text-xs text-stone-400">
 								Вход через Google или по ссылке из письма — без пароля
 							</p>
 						</div>
@@ -120,7 +121,7 @@ export function Pricing() {
 											<p className="text-sm font-medium text-stone-100">
 												{action.label}
 											</p>
-											<p className="text-xs text-stone-500">
+											<p className="text-xs text-stone-400">
 												{action.hint}
 											</p>
 										</div>
@@ -135,27 +136,6 @@ export function Pricing() {
 								</li>
 							))}
 						</ul>
-
-						<div className="mt-6 rounded-2xl border border-stone-800/60 bg-stone-950/50 p-4">
-							<div className="flex items-center gap-2 text-sm font-medium text-stone-200">
-								<Wallet className="size-4 text-amber-300/80" />
-								Пополнение баланса
-							</div>
-							<p className="mt-1.5 text-xs leading-relaxed text-stone-500">
-								От 100 ₽ через ЮKassa, с чеком. При сбое анализа деньги
-								возвращаются на баланс.
-							</p>
-							<div className="mt-3 flex flex-wrap gap-2">
-								{TOPUP_PRESETS.map((amount) => (
-									<span
-										key={amount}
-										className="rounded-xl border border-stone-700/70 bg-stone-900/70 px-3.5 py-1.5 text-sm font-semibold tabular-nums text-stone-200"
-									>
-										{amount} ₽
-									</span>
-								))}
-							</div>
-						</div>
 					</Reveal>
 				</div>
 			</div>

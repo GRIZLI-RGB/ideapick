@@ -8,14 +8,16 @@ import { ArrowRight, Menu, X } from "lucide-react";
 const NAV_LINKS = [
 	{ href: "#how",     label: "Как это работает" },
 	{ href: "#example", label: "Пример отчёта" },
-	{ href: "#pricing", label: "Цены" },
-	{ href: "#faq",     label: "Вопросы" },
+	{ href: "#pricing", label: "Стоимость" },
+	{ href: "#faq",     label: "Вопрос-ответ" },
 ];
 
 export function LandingNav() {
 	const [scrolled, setScrolled] = useState(false);
 	const [open, setOpen] = useState(false);
 	const rootRef = useRef<HTMLElement>(null);
+	const menuRef = useRef<HTMLDivElement>(null);
+	const toggleRef = useRef<HTMLButtonElement>(null);
 
 	useEffect(() => {
 		const onScroll = () => setScrolled(window.scrollY > 8);
@@ -24,11 +26,32 @@ export function LandingNav() {
 		return () => window.removeEventListener("scroll", onScroll);
 	}, []);
 
-	// Закрытие мобильного меню по Escape и клику вне
+	// Мобильное меню: фокус внутрь при открытии, Tab-ловушка,
+	// закрытие по Escape (с возвратом фокуса) и клику вне
 	useEffect(() => {
 		if (!open) return;
+		menuRef.current?.querySelector<HTMLElement>("a")?.focus();
+
 		const onKey = (e: KeyboardEvent) => {
-			if (e.key === "Escape") setOpen(false);
+			if (e.key === "Escape") {
+				setOpen(false);
+				toggleRef.current?.focus();
+				return;
+			}
+			if (e.key !== "Tab" || !menuRef.current) return;
+			const focusables = [
+				toggleRef.current,
+				...menuRef.current.querySelectorAll<HTMLElement>("a"),
+			].filter((el): el is HTMLElement => el != null);
+			const first = focusables[0];
+			const last = focusables[focusables.length - 1];
+			if (e.shiftKey && document.activeElement === first) {
+				e.preventDefault();
+				last.focus();
+			} else if (!e.shiftKey && document.activeElement === last) {
+				e.preventDefault();
+				first.focus();
+			}
 		};
 		const onPointer = (e: PointerEvent) => {
 			if (rootRef.current && !rootRef.current.contains(e.target as Node)) {
@@ -90,6 +113,7 @@ export function LandingNav() {
 							<ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
 						</Link>
 						<button
+							ref={toggleRef}
 							type="button"
 							onClick={() => setOpen((v) => !v)}
 							aria-label={open ? "Закрыть меню" : "Открыть меню"}
@@ -108,6 +132,7 @@ export function LandingNav() {
 
 			{/* Мобильное меню */}
 			<div
+				ref={menuRef}
 				className="mx-4 mt-2 overflow-hidden rounded-2xl border border-stone-800 bg-stone-950/95 p-2 shadow-2xl shadow-black/50 backdrop-blur-xl transition-all duration-200 md:hidden"
 				style={{
 					maxHeight: open ? "400px" : "0px",
