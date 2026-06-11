@@ -161,7 +161,7 @@ export function LoginRightPanel({
 									<input
 										type="email"
 										required
-										placeholder="вы@example.com"
+										placeholder="you@example.com"
 										value={email}
 										onChange={(e) =>
 											setEmail(e.target.value)

@@ -6,14 +6,26 @@ import { useIdeasDemo } from "@/components/ideas/ideas-demo-provider";
 import { IdeasToolbar } from "@/components/ideas/ideas-toolbar";
 
 export function IdeasPage() {
-	const { filteredIdeas } = useIdeasDemo();
+	const { ideas, filteredIdeas } = useIdeasDemo();
+
+	// Идей нет вообще — без тулбара, только приветственный экран.
+	if (ideas.length === 0) {
+		return (
+			<div className="pb-8">
+				<EmptyState />
+			</div>
+		);
+	}
 
 	return (
 		<div className="space-y-6 pb-8">
 			<IdeasToolbar />
 
 			{filteredIdeas.length === 0 ? (
-				<EmptyState />
+				<p className="rounded-2xl border border-stone-800/80 bg-stone-900/40 px-6 py-10 text-center text-sm text-stone-500">
+					Под выбранный фильтр ничего не попадает — измените фильтр
+					или добавьте новую идею.
+				</p>
 			) : (
 				<div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
 					{filteredIdeas.map((idea, i) => (
