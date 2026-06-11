@@ -1,6 +1,6 @@
 "use client";
 
-import { useSupportDemo } from "@/components/support/support-demo-provider";
+import { useSupport } from "@/components/support/support-provider";
 import { motion } from "framer-motion";
 import { ArrowLeft, Loader2, Send } from "lucide-react";
 import Link from "next/link";
@@ -9,19 +9,26 @@ import { useState } from "react";
 
 export function NewTicketForm() {
 	const router = useRouter();
-	const { createTicket } = useSupportDemo();
+	const { createTicket } = useSupport();
 	const [subject, setSubject] = useState("");
 	const [body, setBody] = useState("");
 	const [loading, setLoading] = useState(false);
+	const [error, setError] = useState<string | null>(null);
 
 	async function handleSubmit(e: React.FormEvent) {
 		e.preventDefault();
 		if (!subject.trim() || !body.trim() || loading) return;
 		setLoading(true);
-		await new Promise((r) => setTimeout(r, 500));
-		const id = createTicket(subject, body);
-		setLoading(false);
-		router.push(`/app/support/${id}`);
+		setError(null);
+		try {
+			const id = await createTicket(subject, body);
+			router.push(`/app/support/${id}`);
+		} catch (err) {
+			setError(
+				err instanceof Error ? err.message : "Не удалось создать обращение",
+			);
+			setLoading(false);
+		}
 	}
 
 	return (
@@ -84,6 +91,11 @@ export function NewTicketForm() {
 						className="mt-2 w-full resize-y rounded-xl border border-stone-700 bg-stone-950/60 px-3 py-2.5 text-sm text-stone-100 outline-none transition placeholder:text-stone-600 focus:border-amber-500/40 focus:ring-2 focus:ring-amber-500/20"
 					/>
 				</div>
+				{error ? (
+					<p className="text-sm text-red-400" role="alert">
+						{error}
+					</p>
+				) : null}
 				<button
 					type="submit"
 					disabled={!subject.trim() || !body.trim() || loading}

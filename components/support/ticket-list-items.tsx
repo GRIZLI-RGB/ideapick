@@ -35,7 +35,7 @@ export function TicketCardItem({ ticket, viewedIds }: TicketCardItemProps) {
 				className={`group flex h-full cursor-pointer flex-col rounded-2xl border px-4 py-3.5 transition-colors ${accent}`}
 			>
 				<div className="flex flex-wrap items-center gap-2">
-					<span className="text-xs tabular-nums text-stone-500">#{ticket.id}</span>
+					<span className="text-xs tabular-nums text-stone-500">#{ticket.number}</span>
 					<TicketStatusBadge status={ticket.status} showPulse={needsAttention} />
 				</div>
 				<p className="mt-1.5 line-clamp-2 flex-1 font-medium text-stone-100 transition-colors group-hover:text-stone-50">

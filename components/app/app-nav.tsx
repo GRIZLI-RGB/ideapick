@@ -3,13 +3,13 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { HEADER_SCALE, resolveAppNavId } from "@/lib/app/header-scale";
-import { useSupportDemo } from "@/components/support/support-demo-provider";
+import { useSupport } from "@/components/support/support-provider";
 import { Headphones, Lightbulb } from "lucide-react";
 
 export function AppNav() {
 	const pathname = usePathname();
 	const active = resolveAppNavId(pathname);
-	const { hasAttention } = useSupportDemo();
+	const { hasAttention } = useSupport();
 	const linkBase = `${HEADER_SCALE.nav} flex items-center gap-1.5 rounded-lg transition`;
 	const iconCls = HEADER_SCALE.icon;
 

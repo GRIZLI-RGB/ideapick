@@ -3,7 +3,9 @@ export type TransactionKind =
 	| "topup"
 	| "anamnesis"
 	| "analysis"
-	| "bonus";
+	| "bonus"
+	// Ручная корректировка баланса администратором (+/−).
+	| "adjustment";
 
 export type Transaction = {
 	id: string;

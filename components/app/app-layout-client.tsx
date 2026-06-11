@@ -7,9 +7,10 @@ import {
 	DemoToast,
 } from "@/components/ideas/add-idea-dialogs";
 import { IdeasDemoProvider } from "@/components/ideas/ideas-demo-provider";
-import { SupportDemoProvider } from "@/components/support/support-demo-provider";
+import { SupportProvider } from "@/components/support/support-provider";
 import { WalletModal } from "@/components/wallet/wallet-modal";
 import type { Idea } from "@/lib/ideas/types";
+import type { SupportTicket } from "@/lib/support/types";
 import type { Transaction } from "@/lib/wallet/types";
 
 export function AppLayoutClient({
@@ -17,11 +18,13 @@ export function AppLayoutClient({
 	initialBalance,
 	initialTransactions,
 	initialIdeas,
+	initialTickets,
 }: {
 	children: React.ReactNode;
 	initialBalance: number;
 	initialTransactions: Transaction[];
 	initialIdeas: Idea[];
+	initialTickets: SupportTicket[];
 }) {
 	return (
 		<IdeasDemoProvider
@@ -29,7 +32,7 @@ export function AppLayoutClient({
 			initialTransactions={initialTransactions}
 			initialIdeas={initialIdeas}
 		>
-			<SupportDemoProvider>
+			<SupportProvider initialTickets={initialTickets}>
 			<AppShell>
 				<ConnectedAppHeader />
 				<main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:px-6 sm:py-8">
@@ -39,7 +42,7 @@ export function AppLayoutClient({
 				<WalletModal />
 				<DemoToast />
 			</AppShell>
-			</SupportDemoProvider>
+			</SupportProvider>
 		</IdeasDemoProvider>
 	);
 }

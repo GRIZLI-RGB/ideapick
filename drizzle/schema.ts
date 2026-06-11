@@ -15,6 +15,11 @@ export const user = pgTable("user", {
 	image: text("image"),
 	// Баланс в целых рублях. Все цены продукта — целые рубли (см. lib/ideas/constants).
 	balance: integer("balance").notNull().default(0),
+	// Поля better-auth admin-плагина: user | admin.
+	role: text("role").notNull().default("user"),
+	banned: boolean("banned").notNull().default(false),
+	banReason: text("ban_reason"),
+	banExpires: timestamp("ban_expires"),
 	createdAt: timestamp("created_at").notNull().defaultNow(),
 	updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
@@ -28,6 +33,8 @@ export const session = pgTable("session", {
 	userId: text("user_id")
 		.notNull()
 		.references(() => user.id, { onDelete: "cascade" }),
+	// better-auth admin-плагин: id админа при имперсонации.
+	impersonatedBy: text("impersonated_by"),
 	createdAt: timestamp("created_at").notNull().defaultNow(),
 	updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
@@ -143,5 +150,46 @@ export const walletTransaction = pgTable(
 	},
 	(table) => [
 		index("wallet_tx_user_idx").on(table.userId, table.createdAt),
+	],
+);
+
+/**
+ * Обращение в поддержку. `number` — короткий человекочитаемый номер для UI
+ * («#1042»), первичный ключ — UUID, как и везде.
+ */
+export const supportTicket = pgTable(
+	"support_ticket",
+	{
+		id: text("id").primaryKey(),
+		number: integer("number").generatedAlwaysAsIdentity().notNull().unique(),
+		userId: text("user_id")
+			.notNull()
+			.references(() => user.id, { onDelete: "cascade" }),
+		subject: text("subject").notNull(),
+		// open | in_progress | answered | closed
+		status: text("status").notNull().default("open"),
+		createdAt: timestamp("created_at").notNull().defaultNow(),
+		updatedAt: timestamp("updated_at").notNull().defaultNow(),
+	},
+	(table) => [
+		index("support_ticket_user_idx").on(table.userId, table.updatedAt),
+		index("support_ticket_status_idx").on(table.status, table.updatedAt),
+	],
+);
+
+export const supportMessage = pgTable(
+	"support_message",
+	{
+		id: text("id").primaryKey(),
+		ticketId: text("ticket_id")
+			.notNull()
+			.references(() => supportTicket.id, { onDelete: "cascade" }),
+		// user | support
+		author: text("author").notNull(),
+		body: text("body").notNull(),
+		createdAt: timestamp("created_at").notNull().defaultNow(),
+	},
+	(table) => [
+		index("support_message_ticket_idx").on(table.ticketId, table.createdAt),
 	],
 );

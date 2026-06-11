@@ -5,13 +5,10 @@ type PageProps = {
 	params: Promise<{ id: string }>;
 };
 
-export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-	const { id } = await params;
-	return {
-		title: `Обращение #${id} — Ideapick`,
-		description: "Переписка по обращению в поддержку Ideapick.",
-	};
-}
+export const metadata: Metadata = {
+	title: "Обращение — Ideapick",
+	description: "Переписка по обращению в поддержку Ideapick.",
+};
 
 export default async function SupportTicketPage({ params }: PageProps) {
 	const { id } = await params;

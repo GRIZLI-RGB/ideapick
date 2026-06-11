@@ -2,12 +2,12 @@
 
 import { TicketCardItem } from "@/components/support/ticket-list-items";
 import { SupportHeader } from "@/components/support/support-header";
-import { useSupportDemo } from "@/components/support/support-demo-provider";
+import { useSupport } from "@/components/support/support-provider";
 import { motion } from "framer-motion";
 import Link from "next/link";
 
 export function SupportInbox() {
-	const { tickets, viewedIds } = useSupportDemo();
+	const { tickets, viewedIds } = useSupport();
 
 	return (
 		<motion.div

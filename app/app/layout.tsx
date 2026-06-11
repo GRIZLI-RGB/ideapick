@@ -1,6 +1,7 @@
 import { AppLayoutClient } from "@/components/app/app-layout-client";
 import { auth } from "@/lib/auth/auth";
 import { listIdeas } from "@/lib/ideas/service";
+import { listTickets } from "@/lib/support/service";
 import { getWalletState } from "@/lib/wallet/service";
 import type { Metadata } from "next";
 import { headers } from "next/headers";
@@ -21,9 +22,10 @@ export default async function AppLayout({
 		redirect("/login");
 	}
 
-	const [wallet, ideas] = await Promise.all([
+	const [wallet, ideas, tickets] = await Promise.all([
 		getWalletState(session.user.id),
 		listIdeas(session.user.id),
+		listTickets(session.user.id),
 	]);
 
 	return (
@@ -31,6 +33,7 @@ export default async function AppLayout({
 			initialBalance={wallet.balance}
 			initialTransactions={wallet.transactions}
 			initialIdeas={ideas}
+			initialTickets={tickets}
 		>
 			{children}
 		</AppLayoutClient>

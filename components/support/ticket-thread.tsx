@@ -1,7 +1,7 @@
 "use client";
 
 import { TicketThreadPanel } from "@/components/support/ticket-thread-panel";
-import { useSupportDemo } from "@/components/support/support-demo-provider";
+import { useSupport } from "@/components/support/support-provider";
 import { motion } from "framer-motion";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
@@ -11,7 +11,7 @@ type TicketThreadProps = {
 };
 
 export function TicketThread({ ticketId }: TicketThreadProps) {
-	const { getTicket } = useSupportDemo();
+	const { getTicket } = useSupport();
 	const ticket = getTicket(ticketId);
 
 	if (!ticket) {

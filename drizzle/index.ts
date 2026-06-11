@@ -5,7 +5,7 @@ import * as schema from "./schema";
 // Переиспользуем pool между hot-reload'ами в dev
 const globalForDb = globalThis as unknown as { pool: Pool | undefined };
 
-const pool =
+export const pool =
 	globalForDb.pool ??
 	new Pool({
 		connectionString: process.env.DATABASE_URL,

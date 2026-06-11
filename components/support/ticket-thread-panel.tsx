@@ -1,7 +1,7 @@
 "use client";
 
 import { TicketStatusBadge } from "@/components/support/ticket-status-badge";
-import { useSupportDemo } from "@/components/support/support-demo-provider";
+import { useSupport } from "@/components/support/support-provider";
 import type { SupportTicket, TicketMessage } from "@/lib/support/types";
 import { ticketNeedsAttention } from "@/lib/support/utils";
 import { Loader2, Send } from "lucide-react";
@@ -58,9 +58,10 @@ export function TicketThreadPanel({
 }: TicketThreadPanelProps) {
 	const router = useRouter();
 	const { markTicketViewed, replyToTicket, closeTicket, viewedIds } =
-		useSupportDemo();
+		useSupport();
 	const [reply, setReply] = useState("");
 	const [sending, setSending] = useState(false);
+	const [error, setError] = useState<string | null>(null);
 
 	useEffect(() => {
 		markTicketViewed(ticket.id);
@@ -73,16 +74,30 @@ export function TicketThreadPanel({
 		e.preventDefault();
 		if (!reply.trim() || sending || isClosed) return;
 		setSending(true);
-		await new Promise((r) => setTimeout(r, 400));
-		replyToTicket(ticket.id, reply);
-		setReply("");
-		setSending(false);
+		setError(null);
+		try {
+			await replyToTicket(ticket.id, reply);
+			setReply("");
+		} catch (err) {
+			setError(
+				err instanceof Error ? err.message : "Не удалось отправить сообщение",
+			);
+		} finally {
+			setSending(false);
+		}
 	}
 
-	function handleClose() {
-		closeTicket(ticket.id);
-		if (onCloseTicket) onCloseTicket();
-		else router.push("/app/support");
+	async function handleClose() {
+		setError(null);
+		try {
+			await closeTicket(ticket.id);
+			if (onCloseTicket) onCloseTicket();
+			else router.push("/app/support");
+		} catch (err) {
+			setError(
+				err instanceof Error ? err.message : "Не удалось закрыть обращение",
+			);
+		}
 	}
 
 	return (
@@ -90,7 +105,7 @@ export function TicketThreadPanel({
 			<div className={`shrink-0 ${compact ? "px-4 pt-4 pb-2" : "mb-4"}`}>
 				<div className="flex flex-wrap items-center gap-2">
 					<span className="text-xs tabular-nums text-stone-500">
-						#{ticket.id}
+						#{ticket.number}
 					</span>
 					<TicketStatusBadge status={ticket.status} showPulse={needsAttention} />
 				</div>
@@ -142,6 +157,11 @@ export function TicketThreadPanel({
 							placeholder="Напишите ответ…"
 							className="w-full resize-none rounded-xl border border-stone-700 bg-stone-950/60 px-3 py-2.5 text-sm text-stone-100 outline-none transition placeholder:text-stone-600 focus:border-amber-500/40 focus:ring-2 focus:ring-amber-500/20"
 						/>
+						{error ? (
+							<p className="mt-2 text-sm text-red-400" role="alert">
+								{error}
+							</p>
+						) : null}
 						<div className="mt-2 flex flex-wrap items-center justify-between gap-2">
 							<button
 								type="button"

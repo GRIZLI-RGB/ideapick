@@ -1,7 +1,7 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { nextCookies } from "better-auth/next-js";
-import { magicLink } from "better-auth/plugins";
+import { admin, magicLink } from "better-auth/plugins";
 import { db } from "@/drizzle";
 import * as schema from "@/drizzle/schema";
 import { sendMagicLinkEmail } from "@/lib/auth/email";
@@ -61,6 +61,13 @@ export const auth = betterAuth({
 			sendMagicLink: async ({ email, url }) => {
 				await sendMagicLinkEmail({ email, url });
 			},
+		}),
+
+		admin({
+			defaultRole: "user",
+			defaultBanReason: "Нарушение правил сервиса",
+			bannedUserMessage:
+				"Аккаунт заблокирован. Напишите в поддержку: support@ideapick.ru",
 		}),
 
 		nextCookies(),
