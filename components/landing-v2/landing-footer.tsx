@@ -71,7 +71,6 @@ export function LandingFooter() {
 
 				<div className="mt-10 flex flex-col items-center gap-1.5 border-t border-stone-800/60 pt-6 text-xs text-stone-500 sm:flex-row sm:justify-between">
 					<p>© {new Date().getFullYear()} Ideapick</p>
-					<p>Оплата через ЮKassa: банковские карты, СБП</p>
 					<p>
 						{OPERATOR.name} · ИНН {OPERATOR.inn}
 					</p>
