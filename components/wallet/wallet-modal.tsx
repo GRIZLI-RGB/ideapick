@@ -180,6 +180,11 @@ export function WalletModal() {
 								{loading ? "Переход к оплате…" : "Пополнить"}
 							</button>
 
+							<p className="mt-2.5 shrink-0 text-center text-xs text-stone-500">
+								Безопасная оплата через ЮKassa — банковские
+								карты, СБП
+							</p>
+
 							<div className="mt-6 flex min-h-0 flex-1 flex-col">
 								<h3 className="mb-2 shrink-0 text-xs font-semibold uppercase tracking-wider text-stone-500">
 									История

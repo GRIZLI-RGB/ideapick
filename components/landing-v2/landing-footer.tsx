@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { BrandMark } from "@/components/brand/brand-mark";
 import { OPERATOR } from "@/lib/legal";
-import { Mail } from "lucide-react";
+import { Mail, Phone } from "lucide-react";
 const SUPPORT_EMAIL = "support@ideapick.ru";
 
 const FOOTER_LINKS = [
@@ -55,12 +55,23 @@ export function LandingFooter() {
 								aria-hidden
 							/>
 							{SUPPORT_EMAIL}
-						</a>{" "}
+						</a>
+						<a
+							href={`tel:${OPERATOR.phoneHref}`}
+							className="inline-flex items-center gap-1.5 rounded-lg border border-stone-800/80 bg-stone-900/40 px-2.5 py-1 text-sm text-stone-300 transition hover:border-stone-700 hover:text-stone-100"
+						>
+							<Phone
+								className="size-3.5 shrink-0 text-amber-400/80"
+								aria-hidden
+							/>
+							{OPERATOR.phone}
+						</a>
 					</nav>
 				</div>
 
 				<div className="mt-10 flex flex-col items-center gap-1.5 border-t border-stone-800/60 pt-6 text-xs text-stone-500 sm:flex-row sm:justify-between">
 					<p>© {new Date().getFullYear()} Ideapick</p>
+					<p>Оплата через ЮKassa: банковские карты, СБП</p>
 					<p>
 						{OPERATOR.name} · ИНН {OPERATOR.inn}
 					</p>

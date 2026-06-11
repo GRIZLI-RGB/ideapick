@@ -428,6 +428,10 @@ const sections: LegalSection[] = [
 						<a href={`mailto:${OPERATOR.email}`}>{OPERATOR.email}</a>
 					</li>
 					<li>
+						<strong>Телефон:</strong>{" "}
+						<a href={`tel:${OPERATOR.phoneHref}`}>{OPERATOR.phone}</a>
+					</li>
+					<li>
 						<strong>Сайт:</strong>{" "}
 						<a href={`https://${OPERATOR.site}`}>{OPERATOR.site}</a>
 					</li>

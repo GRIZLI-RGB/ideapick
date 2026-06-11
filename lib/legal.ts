@@ -6,6 +6,8 @@ export const OPERATOR = {
 	status: "самозанятый (плательщик налога на профессиональный доход)",
 	location: "Россия, г. Тюмень",
 	email: "support@ideapick.ru",
+	phone: "+7 982 783-04-18",
+	phoneHref: "+79827830418",
 	site: "ideapick.ru",
 } as const;
 

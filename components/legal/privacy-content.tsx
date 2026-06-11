@@ -59,6 +59,12 @@ const sections: LegalSection[] = [
 							{OPERATOR.email}
 						</a>
 					</li>
+					<li>
+						<strong>Телефон:</strong>{" "}
+						<a href={`tel:${OPERATOR.phoneHref}`}>
+							{OPERATOR.phone}
+						</a>
+					</li>
 				</ul>
 			</>
 		),
