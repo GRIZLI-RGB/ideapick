@@ -12,7 +12,8 @@ const pool =
 		max: 10,
 		idleTimeoutMillis: 30_000,
 		connectionTimeoutMillis: 10_000,
-		ssl: process.env.NODE_ENV === "production",
+		// SSL нужен только для удалённой БД; для localhost-подключения он выключен.
+		ssl: process.env.DATABASE_SSL === "true",
 	});
 
 if (process.env.NODE_ENV !== "production") {
