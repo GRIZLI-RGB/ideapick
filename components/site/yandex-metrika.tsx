@@ -1,9 +1,7 @@
 import Script from "next/script";
 import { Suspense } from "react";
-import {
-	YM_COUNTER_ID,
-	YandexMetrikaHits,
-} from "@/components/site/yandex-metrika-hits";
+import { YandexMetrikaHits } from "@/components/site/yandex-metrika-hits";
+import { YM_COUNTER_ID } from "@/components/site/yandex-metrika-id";
 
 /** Счётчик Яндекс Метрики. Подключается только в production. */
 export function YandexMetrika() {

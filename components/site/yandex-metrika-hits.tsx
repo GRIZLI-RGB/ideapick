@@ -2,8 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
-
-export const YM_COUNTER_ID = 109748805;
+import { YM_COUNTER_ID } from "@/components/site/yandex-metrika-id";
 
 declare global {
 	interface Window {
