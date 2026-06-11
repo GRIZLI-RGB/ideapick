@@ -19,9 +19,22 @@ import {
 	useContext,
 	useEffect,
 	useMemo,
+	useRef,
 	useState,
 	type ReactNode,
 } from "react";
+
+export type ToastKind = "success" | "error" | "info";
+
+export type Toast = {
+	/** Уникальный id — перезапускает анимацию при замене тоста на новый. */
+	id: number;
+	message: string;
+	kind: ToastKind;
+};
+
+/** Время жизни тоста; с ним же синхронизирована полоска-таймер в DemoToast. */
+export const TOAST_DURATION_MS = 3200;
 
 type IdeasDemoContextValue = {
 	ideas: Idea[];
@@ -33,7 +46,7 @@ type IdeasDemoContextValue = {
 	filter: AnalysisFilter;
 	sort: SortOption;
 	activeDialog: AddIdeaMode | null;
-	toast: string | null;
+	toast: Toast | null;
 	setFilter: (f: AnalysisFilter) => void;
 	setSort: (s: SortOption) => void;
 	openDialog: (mode: AddIdeaMode) => void;
@@ -45,7 +58,6 @@ type IdeasDemoContextValue = {
 	deleteIdea: (id: string) => Promise<boolean>;
 	addRandomIdea: () => Promise<boolean>;
 	addAnamnesisIdeas: () => Promise<boolean>;
-	clearToast: () => void;
 	filteredIdeas: Idea[];
 	stats: { total: number; analyzed: number; pending: number };
 };
@@ -114,13 +126,21 @@ export function IdeasDemoProvider({
 	const [filter, setFilter] = useState<AnalysisFilter>("all");
 	const [sort, setSort] = useState<SortOption>("newest");
 	const [activeDialog, setActiveDialog] = useState<AddIdeaMode | null>(null);
-	const [toast, setToast] = useState<string | null>(null);
+	const [toast, setToast] = useState<Toast | null>(null);
 	const [catalogIdx, setCatalogIdx] = useState(0);
 	const [anamnesisIdx, setAnamnesisIdx] = useState(0);
+	const toastCounter = useRef(0);
+	const toastTimer = useRef<number | undefined>(undefined);
 
-	const showToast = useCallback((msg: string) => {
-		setToast(msg);
-		setTimeout(() => setToast(null), 3200);
+	useEffect(() => () => window.clearTimeout(toastTimer.current), []);
+
+	const showToast = useCallback((message: string, kind: ToastKind = "info") => {
+		window.clearTimeout(toastTimer.current);
+		setToast({ id: ++toastCounter.current, message, kind });
+		toastTimer.current = window.setTimeout(
+			() => setToast(null),
+			TOAST_DURATION_MS,
+		);
 	}, []);
 
 	const appendTransaction = useCallback((tx: Omit<Transaction, "id">) => {
@@ -145,17 +165,21 @@ export function IdeasDemoProvider({
 			window.location.pathname + (query ? `?${query}` : ""),
 		);
 
-		const message =
+		const result: { message: string; kind: ToastKind } | null =
 			flag === "success"
-				? "Баланс пополнен"
+				? { message: "Баланс пополнен", kind: "success" }
 				: flag === "pending"
-					? "Платёж в обработке — баланс обновится после подтверждения"
+					? {
+							message:
+								"Платёж в обработке — баланс обновится после подтверждения",
+							kind: "info",
+						}
 					: flag === "canceled"
-						? "Платёж отменён"
+						? { message: "Платёж отменён", kind: "info" }
 						: null;
-		if (!message) return;
+		if (!result) return;
 		// Тост — вне фазы коммита эффекта (избегаем каскадных ре-рендеров).
-		const id = setTimeout(() => showToast(message), 0);
+		const id = setTimeout(() => showToast(result.message, result.kind), 0);
 		return () => clearTimeout(id);
 	}, [showToast]);
 
@@ -185,7 +209,7 @@ export function IdeasDemoProvider({
 					const data = (await res.json().catch(() => ({}))) as {
 						error?: string;
 					};
-					showToast(data.error ?? "Не удалось создать платёж");
+					showToast(data.error ?? "Не удалось создать платёж", "error");
 					return false;
 				}
 				const { confirmationUrl } = (await res.json()) as {
@@ -194,7 +218,7 @@ export function IdeasDemoProvider({
 				window.location.href = confirmationUrl;
 				return true;
 			} catch {
-				showToast("Сеть недоступна — попробуйте позже");
+				showToast("Сеть недоступна — попробуйте позже", "error");
 				return false;
 			}
 		},
@@ -221,14 +245,14 @@ export function IdeasDemoProvider({
 					const data = (await res.json().catch(() => ({}))) as {
 						error?: string;
 					};
-					showToast(data.error ?? "Не удалось сохранить идею");
+					showToast(data.error ?? "Не удалось сохранить идею", "error");
 					return null;
 				}
 				const { idea } = (await res.json()) as { idea: Idea };
 				setIdeas((prev) => [idea, ...prev]);
 				return idea;
 			} catch {
-				showToast("Сеть недоступна — попробуйте позже");
+				showToast("Сеть недоступна — попробуйте позже", "error");
 				return null;
 			}
 		},
@@ -240,7 +264,7 @@ export function IdeasDemoProvider({
 			const idea = await persistIdea(title, description, "manual");
 			if (!idea) return false;
 			setActiveDialog(null);
-			showToast("Идея добавлена");
+			showToast("Идея добавлена", "success");
 			return true;
 		},
 		[persistIdea, showToast],
@@ -254,14 +278,14 @@ export function IdeasDemoProvider({
 				const res = await fetch(`/api/ideas/${id}`, { method: "DELETE" });
 				if (!res.ok) {
 					setIdeas(snapshot);
-					showToast("Не удалось удалить идею");
+					showToast("Не удалось удалить идею", "error");
 					return false;
 				}
-				showToast("Идея удалена");
+				showToast("Идея удалена", "success");
 				return true;
 			} catch {
 				setIdeas(snapshot);
-				showToast("Сеть недоступна — попробуйте позже");
+				showToast("Сеть недоступна — попробуйте позже", "error");
 				return false;
 			}
 		},
@@ -280,7 +304,7 @@ export function IdeasDemoProvider({
 		setCatalogIdx((i) => i + 1);
 		setRandomUsedToday((n) => n + 1);
 		setActiveDialog(null);
-		showToast("Идея из каталога добавлена");
+		showToast("Идея из каталога добавлена", "success");
 		return true;
 	}, [catalogIdx, randomUsedToday, persistIdea, showToast]);
 
@@ -306,7 +330,7 @@ export function IdeasDemoProvider({
 			createdAt: new Date().toISOString(),
 		});
 		setActiveDialog(null);
-		showToast(`Идея по анамнезу сгенерирована · −${price} ₽`);
+		showToast(`Идея по анамнезу сгенерирована · −${price} ₽`, "success");
 		return true;
 	}, [anamnesisIdx, balance, appendTransaction, persistIdea, showToast]);
 
@@ -346,7 +370,6 @@ export function IdeasDemoProvider({
 		deleteIdea,
 		addRandomIdea,
 		addAnamnesisIdeas,
-		clearToast: () => setToast(null),
 		filteredIdeas,
 		stats,
 	};

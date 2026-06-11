@@ -5,10 +5,12 @@ import { and, desc, eq } from "drizzle-orm";
 import { db } from "@/drizzle";
 import { idea } from "@/drizzle/schema";
 import type { Idea } from "@/lib/ideas/types";
-
-export const IDEA_TITLE_MIN = 3;
-export const IDEA_TITLE_MAX = 100;
-export const IDEA_DESCRIPTION_MAX = 600;
+import {
+	IDEA_DESCRIPTION_MAX,
+	IDEA_DESCRIPTION_MIN,
+	IDEA_TITLE_MAX,
+	IDEA_TITLE_MIN,
+} from "@/lib/ideas/validation";
 
 export type IdeaSource = "manual" | "catalog" | "anamnesis";
 
@@ -61,6 +63,11 @@ export async function createIdea({
 	if (cleanTitle.length > IDEA_TITLE_MAX) {
 		throw new IdeaValidationError(
 			`Название должно быть не длиннее ${IDEA_TITLE_MAX} символов`,
+		);
+	}
+	if (cleanDescription.length < IDEA_DESCRIPTION_MIN) {
+		throw new IdeaValidationError(
+			`Описание должно быть не короче ${IDEA_DESCRIPTION_MIN} символов`,
 		);
 	}
 	if (cleanDescription.length > IDEA_DESCRIPTION_MAX) {
