@@ -2,7 +2,9 @@ import { NextResponse, type NextRequest } from "next/server";
 import { auth } from "@/lib/auth/auth";
 import { createIdea, IdeaValidationError } from "@/lib/ideas/service";
 
-const VALID_SOURCES = new Set(["manual", "catalog", "anamnesis"]);
+// «catalog» сюда не входит: идеи из каталога выдаются только через
+// POST /api/ideas/catalog (лимит + глобальный no-repeat).
+const VALID_SOURCES = new Set(["manual", "anamnesis"]);
 
 export async function POST(request: NextRequest) {
 	const session = await auth.api.getSession({ headers: request.headers });
@@ -22,7 +24,7 @@ export async function POST(request: NextRequest) {
 		typeof body.description === "string" ? body.description : "";
 	const source =
 		typeof body.source === "string" && VALID_SOURCES.has(body.source)
-			? (body.source as "manual" | "catalog" | "anamnesis")
+			? (body.source as "manual" | "anamnesis")
 			: "manual";
 
 	try {

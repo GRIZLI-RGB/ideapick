@@ -4,4 +4,5 @@ export const PRICES = {
 	welcomeBonus: 100,
 } as const;
 
-export const RANDOM_DAILY_LIMIT = 3;
+// Лимит каталога — одна бесплатная идея в сутки (00:00 МСК); зашит в
+// lib/ideas/catalog.ts (claimCatalogIdea), отдельной константы нет.

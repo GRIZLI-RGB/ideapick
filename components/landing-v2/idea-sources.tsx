@@ -1,6 +1,6 @@
 import { Reveal } from "@/components/landing-v2/reveal";
 import { SectionHeading } from "@/components/landing-v2/section-heading";
-import { PRICES, RANDOM_DAILY_LIMIT } from "@/lib/ideas/constants";
+import { PRICES } from "@/lib/ideas/constants";
 import { Dices, Fingerprint, PenLine } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -32,7 +32,7 @@ const SOURCES: Source[] = [
 		title: "Из каталога",
 		price: "Бесплатно",
 		free: true,
-		text: "Не знаете, за что взяться? Возьмите готовую идею из каталога — мгновенно и случайно.",
+		text: "Не знаете, за что взяться? Берите готовую идею из каталога — одна в день, и она достаётся только вам.",
 		accent: "border-amber-500/30 hover:border-amber-500/50",
 		iconClass: "border-amber-500/25 bg-amber-500/10 text-amber-300",
 		priceClass: "border-emerald-500/30 bg-emerald-500/10 text-emerald-300",

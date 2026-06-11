@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Reveal } from "@/components/landing-v2/reveal";
 import { SectionHeading } from "@/components/landing-v2/section-heading";
-import { PRICES, RANDOM_DAILY_LIMIT } from "@/lib/ideas/constants";
+import { PRICES } from "@/lib/ideas/constants";
 import { ArrowRight, Check, Gift } from "lucide-react";
 
 const ACTIONS: {
@@ -28,7 +28,7 @@ const ACTIONS: {
 	{
 		label: "Идея из каталога",
 		price: "0 ₽",
-		hint: `Бесплатно до ${RANDOM_DAILY_LIMIT} раз в сутки`,
+		hint: "Бесплатно, одна идея в день",
 		free: true,
 	},
 	{

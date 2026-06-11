@@ -37,8 +37,8 @@ export function IdeaDetailPending({ idea }: IdeaDetailPendingProps) {
 					Анализ ещё не запускался
 				</h2>
 				<p className="mt-2 text-sm leading-relaxed text-stone-500">
-					AI оценит «{idea.title}» по спросу, конкуренции, монетизации и рискам —
-					и выставит рейтинг 0–100.
+					AI оценит «{idea.title}» по спросу, конкуренции, монетизации
+					и рискам.
 				</p>
 				<button
 					type="button"
@@ -55,13 +55,10 @@ export function IdeaDetailPending({ idea }: IdeaDetailPendingProps) {
 						<>Запустить анализ · {price} ₽</>
 					)}
 				</button>
-				{!canAfford ? (
+				{!canAfford && (
 					<p className="mt-3 text-xs text-amber-400/90">
-						Недостаточно средств ({balance} ₽) — откроется пополнение
-					</p>
-				) : (
-					<p className="mt-3 text-xs text-stone-600">
-						Оценка AI · не инвестиционный совет
+						Недостаточно средств ({balance} ₽) — откроется
+						пополнение
 					</p>
 				)}
 			</div>

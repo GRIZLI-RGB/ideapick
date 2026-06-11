@@ -16,7 +16,7 @@ type IdeaDetailClientProps = {
 
 export function IdeaDetailClient({ id }: IdeaDetailClientProps) {
 	const router = useRouter();
-	const { ideas, deleteIdea } = useIdeasDemo();
+	const { ideas, deleteIdea, setIdeaArchived } = useIdeasDemo();
 	const [deleting, setDeleting] = useState(false);
 
 	const idea = ideas.find((i) => i.id === id);
@@ -49,8 +49,12 @@ export function IdeaDetailClient({ id }: IdeaDetailClientProps) {
 			<IdeaDetailHeader
 				idea={idea}
 				hasAnalysis={hasAnalysis}
-				onArchive={() => router.push("/app/ideas")}
-				onRestore={() => {}}
+				onArchive={async () => {
+					// Архив скрывает идею из основного списка — возвращаемся к нему.
+					router.push("/app/ideas");
+					await setIdeaArchived(idea.id, true);
+				}}
+				onRestore={() => setIdeaArchived(idea.id, false)}
 				onDelete={async () => {
 					setDeleting(true);
 					router.push("/app/ideas");

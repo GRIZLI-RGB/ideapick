@@ -30,6 +30,7 @@ export function IdeaDetailHeader({
 			<IdeaDetailActions
 				idea={idea}
 				hasAnalysis={hasAnalysis}
+				archived={idea.archived}
 				onArchive={onArchive}
 				onRestore={onRestore}
 				onDelete={onDelete}

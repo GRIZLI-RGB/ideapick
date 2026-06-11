@@ -8,7 +8,7 @@ const EMPTY_HINT =
 export function IdeasPageTitle() {
 	const { stats } = useIdeasDemo();
 
-	if (stats.total === 0) {
+	if (stats.total === 0 && stats.archived === 0) {
 		return (
 			<div className="min-w-0">
 				<h1 className="text-2xl font-bold tracking-tight text-stone-50 sm:text-3xl">

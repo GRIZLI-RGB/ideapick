@@ -1,4 +1,4 @@
-import { PRICES, RANDOM_DAILY_LIMIT } from "@/lib/ideas/constants";
+import { PRICES } from "@/lib/ideas/constants";
 
 export type LandingFaqItem = { q: string; a: string };
 
@@ -33,6 +33,6 @@ export const LANDING_FAQ_ITEMS: LandingFaqItem[] = [
 	},
 	{
 		q: "Откуда взять идею, если своей нет?",
-		a: `Возьмите готовую из каталога — бесплатно, до ${RANDOM_DAILY_LIMIT} раз в сутки. Или пройдите короткий опрос: система подберёт варианты под вас.`,
+		a: "Возьмите готовую из каталога — бесплатно, одна идея в день, и она достаётся только вам. Или пройдите короткий опрос: система подберёт варианты под вас.",
 	},
 ];

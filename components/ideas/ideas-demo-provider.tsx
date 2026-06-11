@@ -1,13 +1,11 @@
 "use client";
 
-import { RANDOM_DAILY_LIMIT, PRICES } from "@/lib/ideas/constants";
-import {
-	ANAMNESIS_RESULT_POOL,
-	CATALOG_POOL,
-} from "@/lib/ideas/mock-data";
+import { PRICES } from "@/lib/ideas/constants";
+import { ANAMNESIS_RESULT_POOL } from "@/lib/ideas/mock-data";
 import type {
 	AddIdeaMode,
 	AnalysisFilter,
+	CatalogStatus,
 	Idea,
 	SortOption,
 } from "@/lib/ideas/types";
@@ -41,8 +39,7 @@ type IdeasDemoContextValue = {
 	balance: number;
 	transactions: Transaction[];
 	walletOpen: boolean;
-	randomUsedToday: number;
-	randomLimit: number;
+	catalogStatus: CatalogStatus;
 	filter: AnalysisFilter;
 	sort: SortOption;
 	activeDialog: AddIdeaMode | null;
@@ -56,10 +53,16 @@ type IdeasDemoContextValue = {
 	topUp: (amount: number) => Promise<boolean>;
 	createIdea: (title: string, description: string) => Promise<boolean>;
 	deleteIdea: (id: string) => Promise<boolean>;
-	addRandomIdea: () => Promise<boolean>;
+	setIdeaArchived: (id: string, archived: boolean) => Promise<boolean>;
+	addCatalogIdea: () => Promise<boolean>;
 	addAnamnesisIdeas: () => Promise<boolean>;
 	filteredIdeas: Idea[];
-	stats: { total: number; analyzed: number; pending: number };
+	stats: {
+		total: number;
+		analyzed: number;
+		pending: number;
+		archived: number;
+	};
 };
 
 const IdeasDemoContext = createContext<IdeasDemoContextValue | null>(null);
@@ -86,12 +89,13 @@ function sortIdeas(ideas: Idea[], sort: SortOption): Idea[] {
 
 function filterIdeas(ideas: Idea[], filter: AnalysisFilter): Idea[] {
 	switch (filter) {
-		case "analyzed":
-			return ideas.filter((i) => i.hasAnalysis);
 		case "pending":
-			return ideas.filter((i) => !i.hasAnalysis);
+			return ideas.filter((i) => !i.archived && !i.hasAnalysis);
+		case "archived":
+			return ideas.filter((i) => i.archived);
 		default:
-			return ideas;
+			// Основной список — только активные; архив смотрят отдельным срезом.
+			return ideas.filter((i) => !i.archived);
 	}
 }
 
@@ -109,6 +113,8 @@ type IdeasDemoProviderProps = {
 	initialTransactions: Transaction[];
 	/** Реальные идеи пользователя из БД. */
 	initialIdeas: Idea[];
+	/** Реальное состояние каталога (дневной лимит + остаток пула) из БД. */
+	initialCatalogStatus: CatalogStatus;
 };
 
 export function IdeasDemoProvider({
@@ -116,18 +122,20 @@ export function IdeasDemoProvider({
 	initialBalance,
 	initialTransactions,
 	initialIdeas,
+	initialCatalogStatus,
 }: IdeasDemoProviderProps) {
 	const [ideas, setIdeas] = useState<Idea[]>(initialIdeas);
 	const [balance, setBalance] = useState(initialBalance);
 	const [transactions, setTransactions] =
 		useState<Transaction[]>(initialTransactions);
 	const [walletOpen, setWalletOpen] = useState(false);
-	const [randomUsedToday, setRandomUsedToday] = useState(1);
+	const [catalogStatus, setCatalogStatus] = useState<CatalogStatus>(
+		initialCatalogStatus,
+	);
 	const [filter, setFilter] = useState<AnalysisFilter>("all");
 	const [sort, setSort] = useState<SortOption>("newest");
 	const [activeDialog, setActiveDialog] = useState<AddIdeaMode | null>(null);
 	const [toast, setToast] = useState<Toast | null>(null);
-	const [catalogIdx, setCatalogIdx] = useState(0);
 	const [anamnesisIdx, setAnamnesisIdx] = useState(0);
 	const toastCounter = useRef(0);
 	const toastTimer = useRef<number | undefined>(undefined);
@@ -270,6 +278,45 @@ export function IdeasDemoProvider({
 		[persistIdea, showToast],
 	);
 
+	/** Архив/возврат: оптимистичное обновление с откатом при ошибке API. */
+	const setIdeaArchived = useCallback(
+		async (id: string, archived: boolean) => {
+			const snapshot = ideas;
+			setIdeas((prev) =>
+				prev.map((i) => (i.id === id ? { ...i, archived } : i)),
+			);
+			try {
+				const res = await fetch(`/api/ideas/${id}`, {
+					method: "PATCH",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({ archived }),
+				});
+				if (!res.ok) {
+					setIdeas(snapshot);
+					showToast(
+						archived
+							? "Не удалось перенести в архив"
+							: "Не удалось вернуть из архива",
+						"error",
+					);
+					return false;
+				}
+				showToast(
+					archived
+						? "Идея перенесена в архив"
+						: "Идея возвращена из архива",
+					"success",
+				);
+				return true;
+			} catch {
+				setIdeas(snapshot);
+				showToast("Сеть недоступна — попробуйте позже", "error");
+				return false;
+			}
+		},
+		[ideas, showToast],
+	);
+
 	const deleteIdea = useCallback(
 		async (id: string) => {
 			const snapshot = ideas;
@@ -292,21 +339,42 @@ export function IdeasDemoProvider({
 		[ideas, showToast],
 	);
 
-	const addRandomIdea = useCallback(async () => {
-		if (randomUsedToday >= RANDOM_DAILY_LIMIT) return false;
-		const template = CATALOG_POOL[catalogIdx % CATALOG_POOL.length];
-		const idea = await persistIdea(
-			template.title,
-			template.description,
-			"catalog",
-		);
-		if (!idea) return false;
-		setCatalogIdx((i) => i + 1);
-		setRandomUsedToday((n) => n + 1);
-		setActiveDialog(null);
-		showToast("Идея из каталога добавлена", "success");
-		return true;
-	}, [catalogIdx, randomUsedToday, persistIdea, showToast]);
+	/**
+	 * Запрашивает бесплатную идею дня из каталога. Лимит и отсутствие повторов
+	 * гарантирует сервер; здесь только синхронизация состояния и тосты.
+	 */
+	const addCatalogIdea = useCallback(async () => {
+		if (catalogStatus.usedToday || catalogStatus.poolLeft <= 0) return false;
+		try {
+			const res = await fetch("/api/ideas/catalog", { method: "POST" });
+			if (!res.ok) {
+				const data = (await res.json().catch(() => ({}))) as {
+					error?: string;
+					code?: string;
+				};
+				// Сервер знает лучше: подтягиваем актуальное состояние лимита/пула.
+				if (data.code === "limit") {
+					setCatalogStatus((s) => ({ ...s, usedToday: true }));
+				} else if (data.code === "empty") {
+					setCatalogStatus((s) => ({ ...s, poolLeft: 0 }));
+				}
+				showToast(data.error ?? "Не удалось получить идею", "error");
+				return false;
+			}
+			const { idea, status } = (await res.json()) as {
+				idea: Idea;
+				status: CatalogStatus;
+			};
+			setIdeas((prev) => [idea, ...prev]);
+			setCatalogStatus(status);
+			setActiveDialog(null);
+			showToast("Идея из каталога добавлена", "success");
+			return true;
+		} catch {
+			showToast("Сеть недоступна — попробуйте позже", "error");
+			return false;
+		}
+	}, [catalogStatus, showToast]);
 
 	const addAnamnesisIdeas = useCallback(async () => {
 		const price = PRICES.anamnesis;
@@ -339,22 +407,23 @@ export function IdeasDemoProvider({
 		[ideas, filter, sort],
 	);
 
-	const stats = useMemo(
-		() => ({
-			total: ideas.length,
-			analyzed: ideas.filter((i) => i.hasAnalysis).length,
-			pending: ideas.filter((i) => !i.hasAnalysis).length,
-		}),
-		[ideas],
-	);
+	// Счётчики — по активным идеям; архив выводится отдельно.
+	const stats = useMemo(() => {
+		const active = ideas.filter((i) => !i.archived);
+		return {
+			total: active.length,
+			analyzed: active.filter((i) => i.hasAnalysis).length,
+			pending: active.filter((i) => !i.hasAnalysis).length,
+			archived: ideas.length - active.length,
+		};
+	}, [ideas]);
 
 	const value: IdeasDemoContextValue = {
 		ideas,
 		balance,
 		transactions,
 		walletOpen,
-		randomUsedToday,
-		randomLimit: RANDOM_DAILY_LIMIT,
+		catalogStatus,
 		filter,
 		sort,
 		activeDialog,
@@ -368,7 +437,8 @@ export function IdeasDemoProvider({
 		topUp,
 		createIdea,
 		deleteIdea,
-		addRandomIdea,
+		setIdeaArchived,
+		addCatalogIdea,
 		addAnamnesisIdeas,
 		filteredIdeas,
 		stats,

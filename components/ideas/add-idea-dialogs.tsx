@@ -5,7 +5,7 @@ import {
 	useIdeasDemo,
 	type ToastKind,
 } from "@/components/ideas/ideas-demo-provider";
-import { PRICES, RANDOM_DAILY_LIMIT } from "@/lib/ideas/constants";
+import { PRICES } from "@/lib/ideas/constants";
 import {
 	getFillLevel,
 	IDEA_DESCRIPTION_GOOD,
@@ -21,16 +21,22 @@ import {
 	AlertCircle,
 	Briefcase,
 	Building2,
+	CalendarClock,
 	CheckCircle2,
 	ChevronDown,
+	Dices,
+	Fingerprint,
+	Gift,
 	Globe,
 	GraduationCap,
 	Info,
 	Loader2,
+	PackageOpen,
 	Smartphone,
 	Sparkles,
 	Store,
 	X,
+	Zap,
 	type LucideIcon,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -439,35 +445,119 @@ function CreateDialog({ onClose }: { onClose: () => void }) {
 	);
 }
 
-function RandomDialog({ onClose }: { onClose: () => void }) {
-	const { addRandomIdea, randomUsedToday, randomLimit } = useIdeasDemo();
+const CATALOG_FEATURES: { icon: LucideIcon; label: string; sub: string }[] = [
+	{ icon: Gift, label: "Бесплатно", sub: "одна в день" },
+	{ icon: Fingerprint, label: "Без повторов", sub: "только ваша" },
+	{ icon: Zap, label: "Мгновенно", sub: "без ожидания" },
+];
+
+function CatalogDialog({ onClose }: { onClose: () => void }) {
+	const { addCatalogIdea, catalogStatus } = useIdeasDemo();
 	const [loading, setLoading] = useState(false);
-	const left = randomLimit - randomUsedToday;
+	const poolEmpty = catalogStatus.poolLeft <= 0;
+	const available = !catalogStatus.usedToday && !poolEmpty;
 
 	return (
 		<DialogShell title="Идея из каталога" onClose={onClose}>
-			<p className="text-sm leading-relaxed text-stone-400">
-				Случайная идея из нашего каталога — без AI, бесплатно. Каждая
-				идея выдаётся один раз.
+			{/* Кубик с янтарным свечением — визуальный центр модалки */}
+			<div className="relative mx-auto mt-1 flex size-20 items-center justify-center">
+				<div
+					className="absolute inset-0 rounded-3xl bg-amber-500/20 blur-2xl"
+					aria-hidden
+				/>
+				<motion.div
+					initial={{ rotate: -8, scale: 0.9 }}
+					animate={{ rotate: 0, scale: 1 }}
+					transition={{ type: "spring", damping: 12, stiffness: 200 }}
+					className="relative flex size-16 items-center justify-center rounded-2xl border border-amber-500/30 bg-gradient-to-b from-stone-800 to-stone-900 shadow-lg shadow-black/40"
+				>
+					<Dices className="size-7 text-amber-400" />
+				</motion.div>
+			</div>
+
+			<p className="mt-4 text-center text-sm leading-relaxed text-stone-400">
+				Случайная идея из подборки Ideapick.
+				<br />
+				Каждая достаётся только одному пользователю.
 			</p>
-			<p className="mt-2 text-xs text-stone-500">
-				Осталось сегодня: {Math.max(0, left)} из {RANDOM_DAILY_LIMIT}
-			</p>
-			<button
-				type="button"
-				disabled={left <= 0 || loading}
-				onClick={async () => {
-					setLoading(true);
-					const ok = await addRandomIdea();
-					if (!ok) setLoading(false);
-				}}
-				className="mt-5 flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-amber-500 py-2.5 text-sm font-semibold text-stone-950 transition hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-50"
-			>
-				{loading ? <Loader2 className="size-4 animate-spin" /> : null}
-				{left <= 0
-					? "Лимит на сегодня исчерпан"
-					: "Получить идею · 0 ₽"}
-			</button>
+
+			<div className="mt-4 grid grid-cols-3 gap-1.5">
+				{CATALOG_FEATURES.map((f) => {
+					const Icon = f.icon;
+					return (
+						<div
+							key={f.label}
+							className="flex flex-col items-center gap-1 rounded-xl border border-stone-800 bg-stone-950/60 px-2 py-2.5 text-center"
+						>
+							<Icon className="size-4 text-amber-500/80" />
+							<span className="text-[11px] font-medium leading-tight text-stone-300">
+								{f.label}
+							</span>
+							<span className="text-[10px] leading-tight text-stone-600">
+								{f.sub}
+							</span>
+						</div>
+					);
+				})}
+			</div>
+
+			{available ? (
+				<button
+					type="button"
+					disabled={loading}
+					onClick={async () => {
+						setLoading(true);
+						const ok = await addCatalogIdea();
+						if (!ok) setLoading(false);
+					}}
+					className="mt-5 flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-amber-500 py-2.5 text-sm font-semibold text-stone-950 transition hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-50"
+				>
+					{loading ? (
+						<Loader2 className="size-4 animate-spin" />
+					) : null}
+					Получить идею дня
+				</button>
+			) : (
+				<>
+					<div
+						className={`mt-5 flex items-center gap-3 rounded-xl border px-4 py-3 ${
+							poolEmpty
+								? "border-stone-700/60 bg-stone-800/40"
+								: "border-emerald-500/20 bg-emerald-500/[0.06]"
+						}`}
+					>
+						{poolEmpty ? (
+							<PackageOpen className="size-5 shrink-0 text-stone-400" />
+						) : (
+							<CheckCircle2 className="size-5 shrink-0 text-emerald-400" />
+						)}
+						<div className="min-w-0">
+							<p className="text-sm font-medium text-stone-200">
+								{poolEmpty
+									? "Свободные идеи закончились"
+									: "Идея дня уже у вас"}
+							</p>
+							<p className="mt-0.5 flex items-center gap-1 text-xs text-stone-500">
+								{poolEmpty ? (
+									"Каталог скоро пополнится — загляните позже"
+								) : (
+									<>
+										<CalendarClock className="size-3.5" />
+										Следующая — завтра
+									</>
+								)}
+							</p>
+						</div>
+					</div>
+					<button
+						type="button"
+						onClick={onClose}
+						className="mt-3 w-full cursor-pointer rounded-xl border border-stone-700 py-2.5 text-sm font-medium text-stone-300 transition hover:bg-stone-800"
+					>
+						Понятно
+					</button>
+				</>
+			)}
 		</DialogShell>
 	);
 }
@@ -554,7 +644,7 @@ export function AddIdeaDialogs() {
 				<CreateDialog key="create" onClose={closeDialog} />
 			) : null}
 			{activeDialog === "random" ? (
-				<RandomDialog key="random" onClose={closeDialog} />
+				<CatalogDialog key="random" onClose={closeDialog} />
 			) : null}
 			{activeDialog === "anamnesis" ? (
 				<AnamnesisDialog key="anamnesis" onClose={closeDialog} />

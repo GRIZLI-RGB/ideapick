@@ -16,7 +16,7 @@ export type IdeaSource = "manual" | "catalog" | "anamnesis";
 
 export class IdeaValidationError extends Error {}
 
-function toClientIdea(row: typeof idea.$inferSelect): Idea {
+export function toClientIdea(row: typeof idea.$inferSelect): Idea {
 	return {
 		id: row.id,
 		title: row.title,
@@ -24,6 +24,7 @@ function toClientIdea(row: typeof idea.$inferSelect): Idea {
 		score: row.score,
 		createdAt: row.createdAt.toISOString(),
 		hasAnalysis: row.hasAnalysis,
+		archived: row.archivedAt !== null,
 	};
 }
 
@@ -104,6 +105,28 @@ export async function deleteIdea({
 		.returning({ id: idea.id });
 
 	return deleted.length > 0;
+}
+
+/**
+ * Переносит идею в архив или возвращает в активные.
+ * Возвращает обновлённую идею или null, если запись не найдена.
+ */
+export async function setIdeaArchived({
+	userId,
+	ideaId,
+	archived,
+}: {
+	userId: string;
+	ideaId: string;
+	archived: boolean;
+}): Promise<Idea | null> {
+	const [row] = await db
+		.update(idea)
+		.set({ archivedAt: archived ? new Date() : null, updatedAt: new Date() })
+		.where(and(eq(idea.id, ideaId), eq(idea.userId, userId)))
+		.returning();
+
+	return row ? toClientIdea(row) : null;
 }
 
 /** Получает одну идею пользователя (или null). */

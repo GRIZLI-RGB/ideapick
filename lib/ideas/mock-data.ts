@@ -1,28 +1,9 @@
 import type { Idea } from "@/lib/ideas/types";
 
-export const CATALOG_POOL: Omit<Idea, "id" | "createdAt">[] = [
-	{
-		title: "CLI для аудита зависимостей monorepo",
-		description:
-			"Сканирует workspace, находит дубликаты версий и предлагает безопасные апдейты",
-		score: null,
-		hasAnalysis: false,
-	},
-	{
-		title: "Сервис A/B-тестов для лендингов соло",
-		description: "Один скрипт, split-трафик, отчёт без Google Optimize",
-		score: null,
-		hasAnalysis: false,
-	},
-	{
-		title: "Бот напоминаний о ревью PR",
-		description: "Интеграция с GitHub, Slack/Telegram, SLA по времени ответа",
-		score: null,
-		hasAnalysis: false,
-	},
-];
-
-export const ANAMNESIS_RESULT_POOL: Omit<Idea, "id" | "createdAt">[] = [
+export const ANAMNESIS_RESULT_POOL: Omit<
+	Idea,
+	"id" | "createdAt" | "archived"
+>[] = [
 	{
 		title: "Микро-SaaS для фрилансеров: счета + акты",
 		description:
@@ -38,7 +19,8 @@ export const ANAMNESIS_RESULT_POOL: Omit<Idea, "id" | "createdAt">[] = [
 	},
 ];
 
-export const INITIAL_IDEAS: Idea[] = [
+/** Демо-данные (только для витрины на /login) — без поля archived. */
+export const INITIAL_IDEAS: Omit<Idea, "archived">[] = [
 	{
 		id: "1",
 		title: "Telegram-бот для квестов по городу",

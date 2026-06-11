@@ -17,7 +17,7 @@ const ITEMS = [
 	{
 		mode: "random" as const,
 		label: "Из каталога",
-		desc: "Случайная идея",
+		desc: "Бесплатная идея дня",
 		price: "0 ₽",
 		icon: Shuffle,
 	},
@@ -35,7 +35,7 @@ type AddIdeaMenuProps = {
 };
 
 export function AddIdeaMenu({ variant = "primary" }: AddIdeaMenuProps) {
-	const { openDialog, randomUsedToday, randomLimit } = useIdeasDemo();
+	const { openDialog, catalogStatus } = useIdeasDemo();
 	const [open, setOpen] = useState(false);
 	const ref = useRef<HTMLDivElement>(null);
 
@@ -55,7 +55,11 @@ export function AddIdeaMenu({ variant = "primary" }: AddIdeaMenuProps) {
 		};
 	}, [open]);
 
-	const randomLeft = randomLimit - randomUsedToday;
+	const catalogHint = catalogStatus.usedToday
+		? "Уже получена — завтра снова"
+		: catalogStatus.poolLeft <= 0
+			? "Каталог пополняется"
+			: null;
 
 	return (
 		<div className="relative" ref={ref}>
@@ -86,18 +90,17 @@ export function AddIdeaMenu({ variant = "primary" }: AddIdeaMenuProps) {
 					>
 						{ITEMS.map((item) => {
 							const Icon = item.icon;
-							const disabled =
-								item.mode === "random" && randomLeft <= 0;
+							const hint =
+								item.mode === "random" ? catalogHint : null;
 							return (
 								<button
 									key={item.mode}
 									type="button"
-									disabled={disabled}
 									onClick={() => {
 										setOpen(false);
 										openDialog(item.mode);
 									}}
-									className="flex w-full cursor-pointer items-start gap-3 border-b border-stone-800/80 px-4 py-3.5 text-left transition last:border-0 hover:bg-stone-800/60 disabled:cursor-not-allowed disabled:opacity-45"
+									className="flex w-full cursor-pointer items-start gap-3 border-b border-stone-800/80 px-4 py-3.5 text-left transition last:border-0 hover:bg-stone-800/60"
 								>
 									<div className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg bg-stone-800 text-amber-400">
 										<Icon className="size-4" />
@@ -112,8 +115,7 @@ export function AddIdeaMenu({ variant = "primary" }: AddIdeaMenuProps) {
 											</span>
 										</div>
 										<p className="mt-0.5 text-xs text-stone-500">
-											{item.desc}
-
+											{hint ?? item.desc}
 										</p>
 									</div>
 								</button>
@@ -137,8 +139,7 @@ export function QuickActionCard({
 	description: string;
 	price: string;
 }) {
-	const { openDialog, randomUsedToday, randomLimit } = useIdeasDemo();
-	const disabled = mode === "random" && randomLimit - randomUsedToday <= 0;
+	const { openDialog } = useIdeasDemo();
 	const icons = { create: Plus, random: Shuffle, anamnesis: ClipboardList };
 
 	const Icon = icons[mode];
@@ -146,7 +147,6 @@ export function QuickActionCard({
 	return (
 		<button
 			type="button"
-			disabled={disabled}
 			onClick={() => openDialog(mode)}
 			className="group flex cursor-pointer flex-col rounded-2xl border border-stone-800/80 bg-stone-900/40 p-4 text-left transition hover:border-amber-500/25 hover:bg-stone-900/70 disabled:cursor-not-allowed disabled:opacity-45 sm:p-5"
 		>

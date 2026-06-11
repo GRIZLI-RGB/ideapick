@@ -9,7 +9,7 @@ import {
 import { IdeasDemoProvider } from "@/components/ideas/ideas-demo-provider";
 import { SupportProvider } from "@/components/support/support-provider";
 import { WalletModal } from "@/components/wallet/wallet-modal";
-import type { Idea } from "@/lib/ideas/types";
+import type { CatalogStatus, Idea } from "@/lib/ideas/types";
 import type { SupportTicket } from "@/lib/support/types";
 import type { Transaction } from "@/lib/wallet/types";
 
@@ -19,18 +19,21 @@ export function AppLayoutClient({
 	initialTransactions,
 	initialIdeas,
 	initialTickets,
+	initialCatalogStatus,
 }: {
 	children: React.ReactNode;
 	initialBalance: number;
 	initialTransactions: Transaction[];
 	initialIdeas: Idea[];
 	initialTickets: SupportTicket[];
+	initialCatalogStatus: CatalogStatus;
 }) {
 	return (
 		<IdeasDemoProvider
 			initialBalance={initialBalance}
 			initialTransactions={initialTransactions}
 			initialIdeas={initialIdeas}
+			initialCatalogStatus={initialCatalogStatus}
 		>
 			<SupportProvider initialTickets={initialTickets}>
 			<AppShell>

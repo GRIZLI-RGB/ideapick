@@ -77,10 +77,38 @@ export const idea = pgTable(
 		hasAnalysis: boolean("has_analysis").notNull().default(false),
 		// manual | catalog | anamnesis — источник появления идеи.
 		source: text("source").notNull().default("manual"),
+		// null — активная; дата — когда перенесена в архив (скрыта из списка).
+		archivedAt: timestamp("archived_at"),
 		createdAt: timestamp("created_at").notNull().defaultNow(),
 		updatedAt: timestamp("updated_at").notNull().defaultNow(),
 	},
 	(table) => [index("idea_user_idx").on(table.userId, table.createdAt)],
+);
+
+/**
+ * Пул готовых идей для бесплатной выдачи «из каталога».
+ *
+ * Идея выдаётся ровно один раз глобально: при выдаче проставляются
+ * `issuedToUserId` + `issuedAt`, и запись больше никому не достаётся.
+ * Пополняется через админ-панель (/admin/catalog).
+ */
+export const catalogIdea = pgTable(
+	"catalog_idea",
+	{
+		id: text("id").primaryKey(),
+		// Уникальность защищает от дублей при повторном импорте JSON.
+		title: text("title").notNull().unique(),
+		description: text("description").notNull(),
+		issuedToUserId: text("issued_to_user_id").references(() => user.id, {
+			onDelete: "set null",
+		}),
+		issuedAt: timestamp("issued_at"),
+		createdAt: timestamp("created_at").notNull().defaultNow(),
+	},
+	(table) => [
+		// Дневной лимит пользователя: выдачи за сегодня ищутся по этой паре.
+		index("catalog_idea_issued_idx").on(table.issuedToUserId, table.issuedAt),
+	],
 );
 
 export const verification = pgTable("verification", {
