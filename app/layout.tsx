@@ -30,13 +30,11 @@ export const metadata: Metadata = {
 		description: APP_DESCRIPTION,
 	},
 	icons: {
-		other: [
-			{
-				rel: "mask-icon",
-				url: "/icons/safari-pinned-tab.svg",
-				color: "#f59e0b",
-			},
+		icon: [
+			{ url: "/favicon.ico", sizes: "any" },
+			{ url: "/icons/icon-32x32.png", type: "image/png", sizes: "32x32" },
 		],
+		apple: [{ url: "/apple-icon.png", type: "image/png", sizes: "180x180" }],
 	},
 };
 
