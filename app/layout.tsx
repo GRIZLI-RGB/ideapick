@@ -29,10 +29,17 @@ export const metadata: Metadata = {
 		title: "Ideapick",
 		description: APP_DESCRIPTION,
 	},
+	appleWebApp: {
+		title: "Ideapick",
+		capable: true,
+		statusBarStyle: "black-translucent",
+	},
 	icons: {
 		icon: [
 			{ url: "/favicon.ico", sizes: "any" },
+			{ url: "/favicon.svg", type: "image/svg+xml" },
 			{ url: "/icons/icon-32x32.png", type: "image/png", sizes: "32x32" },
+			{ url: "/icons/icon-96x96.png", type: "image/png", sizes: "96x96" },
 		],
 		apple: [{ url: "/apple-icon.png", type: "image/png", sizes: "180x180" }],
 	},
