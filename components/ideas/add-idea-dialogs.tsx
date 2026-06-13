@@ -477,8 +477,6 @@ function CatalogDialog({ onClose }: { onClose: () => void }) {
 
 			<p className="mt-4 text-center text-sm leading-relaxed text-stone-400">
 				Случайная идея из подборки Ideapick.
-				<br />
-				Каждая достаётся только одному пользователю.
 			</p>
 
 			<div className="mt-4 grid grid-cols-3 gap-1.5">
@@ -493,7 +491,7 @@ function CatalogDialog({ onClose }: { onClose: () => void }) {
 							<span className="text-[11px] font-medium leading-tight text-stone-300">
 								{f.label}
 							</span>
-							<span className="text-[10px] leading-tight text-stone-600">
+							<span className="text-[10px] -mt-1 leading-tight text-stone-600">
 								{f.sub}
 							</span>
 						</div>
