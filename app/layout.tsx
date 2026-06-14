@@ -3,6 +3,8 @@ import { Geist } from "next/font/google";
 import { YandexMetrika } from "@/components/site/yandex-metrika";
 import "./globals.css";
 
+import { TooltipProvider } from "@/components/ui/tooltip";
+
 const geist = Geist({
 	subsets: ["latin", "cyrillic"],
 	variable: "--font-geist",
@@ -55,8 +57,10 @@ export default function RootLayout({
 			<body
 				className={`${geist.className} min-h-dvh bg-stone-950 text-stone-100 antialiased`}
 			>
-				{children}
-				<YandexMetrika />
+				<TooltipProvider delayDuration={200}>
+					{children}
+					<YandexMetrika />
+				</TooltipProvider>
 			</body>
 		</html>
 	);

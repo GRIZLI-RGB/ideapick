@@ -4,13 +4,14 @@ import { RADAR_AXIS_LABELS } from "@/lib/analysis/visual-metrics";
 
 type RadarChartProps = {
 	values: number[];
+	/** Подписи осей; по умолчанию — 5 базовых. Длина может быть любой. */
+	labels?: string[];
 	/** Фиксированный размер; без size — заполняет родителя по CSS */
 	size?: number;
 	className?: string;
 	onAxisClick?: (index: number) => void;
 };
 
-const AXES = 5;
 /** Чуть шире справа под подписи; центр смещён влево */
 const VIEW_W = 272;
 const VIEW_H = 256;
@@ -19,37 +20,37 @@ const CY = VIEW_H / 2;
 const MAX_R = 72;
 const LABEL_R = MAX_R + 20;
 
-const LABEL_ANCHOR: Array<"middle" | "start" | "end"> = [
-	"middle",
-	"start",
-	"start",
-	"end",
-	"end",
-];
-
-function polar(r: number, i: number) {
-	const angle = (Math.PI * 2 * i) / AXES - Math.PI / 2;
+function polar(r: number, i: number, axes: number) {
+	const angle = (Math.PI * 2 * i) / axes - Math.PI / 2;
 	return {
 		x: CX + r * Math.cos(angle),
 		y: CY + r * Math.sin(angle),
 	};
 }
 
-function polygonPoints(r: number, values: number[]) {
+function polygonPoints(r: number, values: number[], axes: number) {
 	return values
 		.map((v, i) => {
-			const p = polar(r * Math.max(0.08, v), i);
+			const p = polar(r * Math.max(0.08, v), i, axes);
 			return `${p.x},${p.y}`;
 		})
 		.join(" ");
 }
 
+/** Якорь подписи по горизонтали относительно центра (для вершин сверху/снизу — middle). */
+function labelAnchor(x: number): "middle" | "start" | "end" {
+	if (Math.abs(x - CX) < 6) return "middle";
+	return x > CX ? "start" : "end";
+}
+
 export function RadarChart({
 	values,
+	labels = RADAR_AXIS_LABELS,
 	size,
 	className = "",
 	onAxisClick,
 }: RadarChartProps) {
+	const axes = values.length;
 	const gridLevels = [0.25, 0.5, 0.75, 1];
 	const sizeProps =
 		size != null ? { width: size, height: size } : { width: "100%", height: "100%" };
@@ -66,14 +67,14 @@ export function RadarChart({
 			{gridLevels.map((g) => (
 				<polygon
 					key={g}
-					points={polygonPoints(MAX_R * g, Array(AXES).fill(1))}
+					points={polygonPoints(MAX_R * g, Array(axes).fill(1), axes)}
 					fill="none"
 					className="stroke-stone-700/80"
 					strokeWidth="1"
 				/>
 			))}
-			{Array.from({ length: AXES }, (_, i) => {
-				const outer = polar(MAX_R, i);
+			{Array.from({ length: axes }, (_, i) => {
+				const outer = polar(MAX_R, i, axes);
 				return (
 					<line
 						key={i}
@@ -87,12 +88,12 @@ export function RadarChart({
 				);
 			})}
 			<polygon
-				points={polygonPoints(MAX_R, values)}
+				points={polygonPoints(MAX_R, values, axes)}
 				className="fill-amber-500/20 stroke-amber-400/90"
 				strokeWidth="2"
 			/>
 			{values.map((_, i) => {
-				const p = polar(MAX_R * Math.max(0.08, values[i]), i);
+				const p = polar(MAX_R * Math.max(0.08, values[i]), i, axes);
 				return (
 					<circle
 						key={i}
@@ -101,21 +102,21 @@ export function RadarChart({
 						r={onAxisClick ? 6 : 4}
 						className={
 							onAxisClick
-								? "cursor-pointer fill-amber-400 stroke-stone-900 stroke-[2]"
+								? "cursor-pointer fill-amber-400 stroke-stone-900 stroke-2"
 								: "fill-amber-400"
 						}
 						onClick={onAxisClick ? () => onAxisClick(i) : undefined}
 					/>
 				);
 			})}
-			{RADAR_AXIS_LABELS.map((label, i) => {
-				const p = polar(LABEL_R, i);
+			{labels.map((label, i) => {
+				const p = polar(LABEL_R, i, axes);
 				return (
 					<text
 						key={label}
 						x={p.x}
 						y={p.y}
-						textAnchor={LABEL_ANCHOR[i]}
+						textAnchor={labelAnchor(p.x)}
 						dominantBaseline="middle"
 						className="fill-stone-500 text-[11px] font-medium"
 					>

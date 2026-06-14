@@ -4,8 +4,11 @@ import { IdeaAnalysisReport } from "@/components/ideas/detail/idea-analysis-repo
 import { IdeaDetailHeader } from "@/components/ideas/detail/idea-detail-header";
 import { IdeaDetailPending } from "@/components/ideas/detail/idea-detail-pending";
 import { IdeaDetailBackLink } from "@/components/ideas/detail/idea-detail-back-nav";
+import { RichAnalysisReport } from "@/components/ideas/detail/rich/rich-analysis-report";
 import { useIdeasDemo } from "@/components/ideas/ideas-demo-provider";
 import { getMockAnalysisReport } from "@/lib/analysis/mock-reports";
+import { buildRichMockReport } from "@/lib/analysis/rich-mock";
+import type { RichAnalysisReport as RichReport } from "@/lib/analysis/rich-types";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
@@ -18,6 +21,7 @@ export function IdeaDetailClient({ id }: IdeaDetailClientProps) {
 	const router = useRouter();
 	const { ideas, deleteIdea, setIdeaArchived } = useIdeasDemo();
 	const [deleting, setDeleting] = useState(false);
+	const [generated, setGenerated] = useState<RichReport | null>(null);
 
 	const idea = ideas.find((i) => i.id === id);
 	const report = useMemo(
@@ -37,7 +41,7 @@ export function IdeaDetailClient({ id }: IdeaDetailClientProps) {
 		);
 	}
 
-	const hasAnalysis = Boolean(report);
+	const hasAnalysis = Boolean(report) || Boolean(generated);
 
 	return (
 		<motion.div
@@ -60,14 +64,25 @@ export function IdeaDetailClient({ id }: IdeaDetailClientProps) {
 					router.push("/app/ideas");
 					await deleteIdea(idea.id);
 				}}
-				onUpdateAnalysis={() => {}}
+				onUpdateAnalysis={() => {
+					if (!generated) return;
+					const next = generated.version + 1;
+					setGenerated(buildRichMockReport(idea, next));
+				}}
 			/>
 
 			<div className="mt-5">
-				{report ? (
+				{generated ? (
+					<RichAnalysisReport report={generated} />
+				) : report ? (
 					<IdeaAnalysisReport report={report} />
 				) : (
-					<IdeaDetailPending idea={idea} />
+					<IdeaDetailPending
+						idea={idea}
+						onAnalyzed={() =>
+							setGenerated(buildRichMockReport(idea))
+						}
+					/>
 				)}
 			</div>
 		</motion.div>

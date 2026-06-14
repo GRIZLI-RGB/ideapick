@@ -25,7 +25,6 @@ type IdeaAnalysisReportProps = {
 const TONE_BADGE_CLASS: Record<FactorTone, string> = {
 	strong: "border-emerald-500/25 bg-emerald-500/10",
 	ok: "border-amber-500/25 bg-amber-500/10",
-	weak: "border-sky-500/25 bg-sky-500/10",
 	poor: "border-rose-500/25 bg-rose-500/10",
 };
 

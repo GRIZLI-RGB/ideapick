@@ -1,7 +1,7 @@
 import type { AnalysisReport } from "@/lib/analysis/types";
 import type { ReportSectionKey } from "@/lib/analysis/section-meta";
 
-export type FactorTone = "strong" | "ok" | "weak" | "poor";
+export type FactorTone = "strong" | "ok" | "poor";
 
 export type VisualFactor = {
 	key: ReportSectionKey;
@@ -12,22 +12,19 @@ export type VisualFactor = {
 
 export function toneFromLevel(level: number): FactorTone {
 	if (level >= 71) return "strong";
-	if (level >= 51) return "ok";
-	if (level >= 31) return "weak";
+	if (level >= 31) return "ok";
 	return "poor";
 }
 
 export const TONE_BAR_CLASS: Record<FactorTone, string> = {
 	strong: "bg-emerald-400",
 	ok: "bg-amber-400",
-	weak: "bg-sky-400",
 	poor: "bg-rose-400",
 };
 
 export const TONE_TEXT_CLASS: Record<FactorTone, string> = {
 	strong: "text-emerald-400",
 	ok: "text-amber-400",
-	weak: "text-sky-400",
 	poor: "text-rose-400",
 };
 
