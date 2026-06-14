@@ -1,7 +1,7 @@
 import type { Idea } from "@/lib/ideas/types";
 
 /** Демо-данные (только для витрины на /login) — без поля archived. */
-export const INITIAL_IDEAS: Omit<Idea, "archived">[] = [
+const INITIAL_IDEAS: Omit<Idea, "archived">[] = [
 	{
 		id: "1",
 		title: "Telegram-бот для квестов по городу",

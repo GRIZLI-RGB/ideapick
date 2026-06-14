@@ -7,7 +7,7 @@ const LANDING_DESCRIPTION =
 	"Опишите идею в нескольких предложениях — Ideapick оценит спрос, конкуренцию, монетизацию и риски, выдаст вердикт 0–100 и план первых шагов. Первый анализ — бесплатно.";
 
 export const metadata: Metadata = {
-	title: LANDING_TITLE,
+	title: { absolute: LANDING_TITLE },
 	description: LANDING_DESCRIPTION,
 	alternates: { canonical: "/" },
 	openGraph: {

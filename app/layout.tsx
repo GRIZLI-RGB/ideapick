@@ -14,7 +14,10 @@ const APP_DESCRIPTION =
 	"Оцените бизнес-идею с помощью AI-анализа — узнайте спрос, конкуренцию и монетизацию до того, как вложите ресурсы.";
 
 export const metadata: Metadata = {
-	title: "Ideapick",
+	title: {
+		default: "Ideapick",
+		template: "%s — Ideapick",
+	},
 	description: APP_DESCRIPTION,
 	metadataBase: new URL(
 		process.env.NEXT_PUBLIC_APP_URL ?? "https://ideapick.ru",

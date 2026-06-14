@@ -119,16 +119,28 @@ export function SupportProvider({
 		[tickets, viewedIds],
 	);
 
-	const value: SupportContextValue = {
-		tickets,
-		viewedIds,
-		hasAttention,
-		getTicket,
-		markTicketViewed,
-		createTicket,
-		replyToTicket,
-		closeTicket,
-	};
+	const value = useMemo<SupportContextValue>(
+		() => ({
+			tickets,
+			viewedIds,
+			hasAttention,
+			getTicket,
+			markTicketViewed,
+			createTicket,
+			replyToTicket,
+			closeTicket,
+		}),
+		[
+			tickets,
+			viewedIds,
+			hasAttention,
+			getTicket,
+			markTicketViewed,
+			createTicket,
+			replyToTicket,
+			closeTicket,
+		],
+	);
 
 	return (
 		<SupportContext.Provider value={value}>{children}</SupportContext.Provider>

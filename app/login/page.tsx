@@ -5,9 +5,10 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
 export const metadata: Metadata = {
-	title: "Вход — Ideapick",
+	title: "Вход",
 	description:
 		"Войдите в Ideapick через Google или ссылку на почту, чтобы оценивать бизнес-идеи с помощью AI.",
+	alternates: { canonical: "/login" },
 };
 
 export default async function Page() {

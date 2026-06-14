@@ -23,6 +23,10 @@ import {
 
 const WELCOME_BONUS = PRICES.welcomeBonus;
 
+/** Сколько последних операций отдаём в кошелёк. История растёт бесконечно,
+ *  а пользователю в модалке нужны лишь недавние — остальное лишь грузит БД/сеть. */
+const WALLET_HISTORY_LIMIT = 50;
+
 function appUrl(): string {
 	return (
 		process.env.NEXT_PUBLIC_APP_URL ??
@@ -91,7 +95,8 @@ export async function getWalletState(userId: string): Promise<WalletState> {
 		.select()
 		.from(walletTransaction)
 		.where(eq(walletTransaction.userId, userId))
-		.orderBy(desc(walletTransaction.createdAt));
+		.orderBy(desc(walletTransaction.createdAt))
+		.limit(WALLET_HISTORY_LIMIT);
 
 	return {
 		balance: u?.balance ?? 0,

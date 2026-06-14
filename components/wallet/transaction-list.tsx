@@ -5,6 +5,8 @@ import type { Transaction, TransactionKind } from "@/lib/wallet/types";
 import {
 	ArrowDownLeft,
 	ArrowUpRight,
+	ChevronLeft,
+	ChevronRight,
 	Gift,
 	RotateCcw,
 	Sparkles,
@@ -90,9 +92,9 @@ function TransactionRow({
 
 export function TransactionList() {
 	// Список монтируется только при открытии модалки кошелька, поэтому
-	// пагинация естественно сбрасывается на каждое открытие — эффект не нужен.
+	// страница естественно сбрасывается на каждое открытие — эффект не нужен.
 	const { transactions } = useIdeasDemo();
-	const [visibleCount, setVisibleCount] = useState(HISTORY_PAGE_SIZE);
+	const [page, setPage] = useState(0);
 
 	if (transactions.length === 0) {
 		return (
@@ -102,11 +104,11 @@ export function TransactionList() {
 		);
 	}
 
-	const visible = transactions.slice(0, visibleCount);
-	const hasMore = visibleCount < transactions.length;
-	const remaining = transactions.length - visibleCount;
-	const nextBatch = Math.min(HISTORY_PAGE_SIZE, remaining);
-	const canCollapse = visibleCount > HISTORY_PAGE_SIZE;
+	const pageCount = Math.ceil(transactions.length / HISTORY_PAGE_SIZE);
+	// Защита от выхода за границы, если список изменился (напр. после пополнения).
+	const safePage = Math.min(page, pageCount - 1);
+	const start = safePage * HISTORY_PAGE_SIZE;
+	const visible = transactions.slice(start, start + HISTORY_PAGE_SIZE);
 
 	return (
 		<div className="flex min-h-0 flex-col">
@@ -122,34 +124,29 @@ export function TransactionList() {
 				</ul>
 			</div>
 
-			{hasMore || canCollapse ? (
-				<div className="mt-2 shrink-0 space-y-1">
-					{hasMore ? (
-						<button
-							type="button"
-							onClick={() =>
-								setVisibleCount((n) =>
-									Math.min(n + HISTORY_PAGE_SIZE, transactions.length),
-								)
-							}
-							className="w-full cursor-pointer rounded-xl border border-stone-700/80 bg-stone-950/40 px-3 py-2 text-sm font-medium text-stone-300 transition hover:border-stone-600 hover:bg-stone-800/50 hover:text-stone-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/40"
-						>
-							Показать ещё {nextBatch}
-							<span className="text-stone-500">
-								{" "}
-								· {remaining} из {transactions.length}
-							</span>
-						</button>
-					) : null}
-					{canCollapse ? (
-						<button
-							type="button"
-							onClick={() => setVisibleCount(HISTORY_PAGE_SIZE)}
-							className="w-full cursor-pointer px-3 py-1.5 text-xs text-stone-500 transition hover:text-stone-300"
-						>
-							Свернуть
-						</button>
-					) : null}
+			{pageCount > 1 ? (
+				<div className="mt-2 flex shrink-0 items-center justify-between gap-2">
+					<button
+						type="button"
+						onClick={() => setPage((p) => Math.max(0, p - 1))}
+						disabled={safePage === 0}
+						aria-label="Предыдущие операции"
+						className="inline-flex size-8 cursor-pointer items-center justify-center rounded-lg border border-stone-700/80 bg-stone-950/40 text-stone-300 transition hover:border-stone-600 hover:bg-stone-800/50 hover:text-stone-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/40 disabled:cursor-default disabled:opacity-40 disabled:hover:border-stone-700/80 disabled:hover:bg-stone-950/40"
+					>
+						<ChevronLeft className="size-4" />
+					</button>
+					<span className="text-xs tabular-nums text-stone-500">
+						{safePage + 1} из {pageCount}
+					</span>
+					<button
+						type="button"
+						onClick={() => setPage((p) => Math.min(pageCount - 1, p + 1))}
+						disabled={safePage >= pageCount - 1}
+						aria-label="Следующие операции"
+						className="inline-flex size-8 cursor-pointer items-center justify-center rounded-lg border border-stone-700/80 bg-stone-950/40 text-stone-300 transition hover:border-stone-600 hover:bg-stone-800/50 hover:text-stone-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/40 disabled:cursor-default disabled:opacity-40 disabled:hover:border-stone-700/80 disabled:hover:bg-stone-950/40"
+					>
+						<ChevronRight className="size-4" />
+					</button>
 				</div>
 			) : null}
 		</div>
