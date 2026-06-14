@@ -1,19 +1,15 @@
 "use client";
 
+import { IdeaDetailAnalyzing } from "@/components/ideas/detail/idea-detail-analyzing";
 import { PANEL } from "@/components/ideas/detail/idea-detail-shared";
 import { RadarChart } from "@/components/ideas/detail/visual/radar-chart";
-import {
-	ANALYSIS_STEP_MS,
-	ANALYSIS_STEPS,
-	RunningOverlay,
-} from "@/components/ideas/detail/variants/analysis-progress-variants";
 import { useIdeasDemo } from "@/components/ideas/ideas-demo-provider";
 import { ScoreRing } from "@/components/ideas/score-ring";
 import { RICH_RADAR_LABELS } from "@/lib/analysis/rich-types";
 import { PRICES } from "@/lib/ideas/constants";
 import type { Idea } from "@/lib/ideas/types";
 import { Loader2, Lock, Wallet } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 type IdeaDetailPendingProps = {
 	idea: Idea;
@@ -32,20 +28,9 @@ export function IdeaDetailPending({
 	const { balance, analyzeIdea, openWallet } = useIdeasDemo();
 	const [loading, setLoading] = useState(false);
 	const [charging, setCharging] = useState(false);
-	const [step, setStep] = useState(0);
 
 	const insufficient = balance < price;
 	const busy = loading || charging;
-
-	useEffect(() => {
-		if (!loading) return;
-		if (step >= ANALYSIS_STEPS.length - 1) {
-			const done = window.setTimeout(onAnalyzed, ANALYSIS_STEP_MS);
-			return () => window.clearTimeout(done);
-		}
-		const next = window.setTimeout(() => setStep((s) => s + 1), ANALYSIS_STEP_MS);
-		return () => window.clearTimeout(next);
-	}, [loading, step, onAnalyzed]);
 
 	async function handleAnalyze() {
 		if (busy) return;
@@ -57,12 +42,13 @@ export function IdeaDetailPending({
 			return;
 		}
 		if (result !== "ok") return;
-		setStep(0);
 		setLoading(true);
 	}
 
 	if (loading) {
-		return <RunningOverlay step={step} title={idea.title} />;
+		return (
+			<IdeaDetailAnalyzing title={idea.title} onComplete={onAnalyzed} />
+		);
 	}
 
 	return (

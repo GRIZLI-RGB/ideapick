@@ -1,5 +1,6 @@
 "use client";
 
+import { IdeaDetailAnalyzing } from "@/components/ideas/detail/idea-detail-analyzing";
 import { IdeaDetailHeader } from "@/components/ideas/detail/idea-detail-header";
 import { IdeaDetailPending } from "@/components/ideas/detail/idea-detail-pending";
 import { IdeaDetailBackLink } from "@/components/ideas/detail/idea-detail-back-nav";
@@ -9,7 +10,7 @@ import { buildRichMockReport } from "@/lib/analysis/rich-mock";
 import type { RichAnalysisReport as RichReport } from "@/lib/analysis/rich-types";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 
 type IdeaDetailClientProps = {
 	id: string;
@@ -22,6 +23,9 @@ export function IdeaDetailClient({ id }: IdeaDetailClientProps) {
 	const [deleting, setDeleting] = useState(false);
 	/** Отчёт текущей сессии (обновления версии); при reload берётся из buildRichMockReport. */
 	const [generated, setGenerated] = useState<RichReport | null>(null);
+	/** Повторный анализ: после списания показываем те же шаги, что при первом запуске. */
+	const [refreshing, setRefreshing] = useState(false);
+	const [refreshFromVersion, setRefreshFromVersion] = useState(1);
 
 	const idea = ideas.find((i) => i.id === id);
 	const report = useMemo(() => {
@@ -32,6 +36,19 @@ export function IdeaDetailClient({ id }: IdeaDetailClientProps) {
 		}
 		return null;
 	}, [idea, generated]);
+
+	const completeRefresh = useCallback(() => {
+		if (!idea) return;
+		setGenerated(buildRichMockReport(idea, refreshFromVersion + 1));
+		setRefreshing(false);
+	}, [idea, refreshFromVersion]);
+
+	const handleFirstAnalyzed = useCallback(() => {
+		if (!idea) return;
+		const fresh = buildRichMockReport(idea);
+		setGenerated(fresh);
+		markIdeaAnalyzed(idea.id, fresh.score);
+	}, [idea, markIdeaAnalyzed]);
 
 	if (!idea) {
 		// Во время удаления идея уже убрана из состояния — не мигаем «не найдено»,
@@ -69,29 +86,31 @@ export function IdeaDetailClient({ id }: IdeaDetailClientProps) {
 					await deleteIdea(idea.id);
 				}}
 				onUpdateAnalysis={async () => {
-					if (!hasAnalysis) return;
+					if (!hasAnalysis || refreshing) return;
 					const result = await analyzeIdea(idea.id, "update");
 					if (result === "insufficient") {
 						openWallet();
 						return;
 					}
 					if (result !== "ok") return;
-					const next = (report?.version ?? 1) + 1;
-					setGenerated(buildRichMockReport(idea, next));
+					setRefreshFromVersion(report?.version ?? 1);
+					setRefreshing(true);
 				}}
 			/>
 
 			<div className="mt-5">
-				{report ? (
+				{refreshing ? (
+					<IdeaDetailAnalyzing
+						key={`refresh-${refreshFromVersion}`}
+						title={idea.title}
+						onComplete={completeRefresh}
+					/>
+				) : report ? (
 					<RichAnalysisReport report={report} />
 				) : (
 					<IdeaDetailPending
 						idea={idea}
-						onAnalyzed={() => {
-							const fresh = buildRichMockReport(idea);
-							setGenerated(fresh);
-							markIdeaAnalyzed(idea.id, fresh.score);
-						}}
+						onAnalyzed={handleFirstAnalyzed}
 					/>
 				)}
 			</div>
