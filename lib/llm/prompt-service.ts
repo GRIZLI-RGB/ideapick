@@ -7,7 +7,9 @@ import { promptTemplate } from "@/drizzle/schema";
 import { DEEPSEEK_MODELS, type DeepseekModel } from "@/lib/llm/deepseek";
 import {
 	ANALYSIS_TEMPLATE_KEY,
-	DEFAULT_ANALYSIS_TEMPLATE,
+	defaultTemplateFor,
+	PROMPT_TEMPLATE_DEFS,
+	requiredPlaceholderFor,
 	type PromptTemplateConfig,
 } from "@/lib/llm/prompts";
 
@@ -23,7 +25,7 @@ export type PromptTemplate = PromptTemplateConfig & {
 function toModel(value: string): DeepseekModel {
 	return (DEEPSEEK_MODELS as string[]).includes(value)
 		? (value as DeepseekModel)
-		: DEFAULT_ANALYSIS_TEMPLATE.model;
+		: defaultTemplateFor(ANALYSIS_TEMPLATE_KEY).model;
 }
 
 function toTemplate(row: typeof promptTemplate.$inferSelect): PromptTemplate {
@@ -43,28 +45,32 @@ function toTemplate(row: typeof promptTemplate.$inferSelect): PromptTemplate {
 	};
 }
 
-/** Создаёт дефолтный шаблон, если по ключу анализа ещё ничего нет. */
+/** Создаёт дефолтные шаблоны для всех известных ключей, которых ещё нет в БД. */
 async function ensureSeeded(): Promise<void> {
-	const [existing] = await db
-		.select({ id: promptTemplate.id })
-		.from(promptTemplate)
-		.where(eq(promptTemplate.key, ANALYSIS_TEMPLATE_KEY))
-		.limit(1);
+	const existing = await db
+		.select({ key: promptTemplate.key })
+		.from(promptTemplate);
+	const present = new Set(existing.map((r) => r.key));
 
-	if (existing) return;
+	const missing = PROMPT_TEMPLATE_DEFS.filter(
+		(d) => !present.has(d.config.key),
+	);
+	if (missing.length === 0) return;
 
-	await db.insert(promptTemplate).values({
-		id: randomUUID(),
-		key: DEFAULT_ANALYSIS_TEMPLATE.key,
-		name: DEFAULT_ANALYSIS_TEMPLATE.name,
-		model: DEFAULT_ANALYSIS_TEMPLATE.model,
-		thinking: DEFAULT_ANALYSIS_TEMPLATE.thinking,
-		temperature: DEFAULT_ANALYSIS_TEMPLATE.temperature,
-		maxTokens: DEFAULT_ANALYSIS_TEMPLATE.maxTokens,
-		systemPrompt: DEFAULT_ANALYSIS_TEMPLATE.systemPrompt,
-		userPromptTemplate: DEFAULT_ANALYSIS_TEMPLATE.userPromptTemplate,
-		isActive: true,
-	});
+	await db.insert(promptTemplate).values(
+		missing.map((d) => ({
+			id: randomUUID(),
+			key: d.config.key,
+			name: d.config.name,
+			model: d.config.model,
+			thinking: d.config.thinking,
+			temperature: d.config.temperature,
+			maxTokens: d.config.maxTokens,
+			systemPrompt: d.config.systemPrompt,
+			userPromptTemplate: d.config.userPromptTemplate,
+			isActive: true,
+		})),
+	);
 }
 
 /**
@@ -83,12 +89,10 @@ export async function getActiveTemplate(
 
 	if (row) return toTemplate(row);
 
-	if (key === ANALYSIS_TEMPLATE_KEY) {
-		await ensureSeeded();
-		return DEFAULT_ANALYSIS_TEMPLATE;
-	}
-
-	return DEFAULT_ANALYSIS_TEMPLATE;
+	// Шаблона по ключу ещё нет — сидируем дефолты и возвращаем конфиг по ключу,
+	// чтобы генерация работала до первой правки из админки.
+	await ensureSeeded();
+	return defaultTemplateFor(key);
 }
 
 /** Все шаблоны для админ-панели (сидирует дефолт при первом обращении). */
@@ -127,9 +131,19 @@ export async function updateTemplate(
 	if (systemPrompt.length < 10) {
 		throw new PromptValidationError("Системный промпт слишком короткий");
 	}
-	if (!userPromptTemplate.includes("{{description}}")) {
+
+	// Обязательный плейсхолдер зависит от назначения шаблона (ключа).
+	const [target] = await db
+		.select({ key: promptTemplate.key })
+		.from(promptTemplate)
+		.where(eq(promptTemplate.id, id))
+		.limit(1);
+	if (!target) return null;
+
+	const requiredPlaceholder = requiredPlaceholderFor(target.key);
+	if (!userPromptTemplate.includes(requiredPlaceholder)) {
 		throw new PromptValidationError(
-			"Пользовательский промпт должен содержать {{description}}",
+			`Пользовательский промпт должен содержать ${requiredPlaceholder}`,
 		);
 	}
 	if (!(DEEPSEEK_MODELS as string[]).includes(input.model)) {

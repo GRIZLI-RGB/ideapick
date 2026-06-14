@@ -3,8 +3,16 @@ import "server-only";
 import { randomUUID } from "node:crypto";
 import { and, desc, eq, sql } from "drizzle-orm";
 import { db } from "@/drizzle";
-import { idea, payment, user, walletTransaction } from "@/drizzle/schema";
+import {
+	anamnesisSession,
+	idea,
+	payment,
+	user,
+	walletTransaction,
+} from "@/drizzle/schema";
 import { PRICES } from "@/lib/ideas/constants";
+import { toClientIdea } from "@/lib/ideas/service";
+import type { Idea } from "@/lib/ideas/types";
 import { calcTopUpBonus, TOP_UP_MAX, TOP_UP_MIN } from "@/lib/wallet/bonus";
 import type { Transaction, TransactionKind } from "@/lib/wallet/types";
 import {
@@ -391,5 +399,173 @@ export async function chargeForAnalysis({
 				createdAt: new Date().toISOString(),
 			},
 		};
+	});
+}
+
+export type AnamnesisStartResult = {
+	sessionId: string;
+	balance: number;
+	/** Транзакция списания; null — переиспользована ранее оплаченная сессия. */
+	transaction: Transaction | null;
+};
+
+/**
+ * Открывает оплаченную сессию опроса «по анамнезу». Если у пользователя уже есть
+ * неиспользованная оплаченная сессия — переиспользует её без повторного списания
+ * (например, после закрытия и повторного открытия модалки). Иначе атомарно
+ * списывает {@link PRICES.anamnesis} ₽ и создаёт новую сессию.
+ * Бросает {@link InsufficientFundsError} при нехватке средств.
+ */
+export async function startAnamnesisSession({
+	userId,
+}: {
+	userId: string;
+}): Promise<AnamnesisStartResult> {
+	const price = PRICES.anamnesis;
+
+	return await db.transaction(async (tx) => {
+		const [existing] = await tx
+			.select()
+			.from(anamnesisSession)
+			.where(
+				and(
+					eq(anamnesisSession.userId, userId),
+					eq(anamnesisSession.status, "paid"),
+				),
+			)
+			.orderBy(desc(anamnesisSession.createdAt))
+			.limit(1)
+			.for("update");
+
+		if (existing) {
+			const [u] = await tx
+				.select({ balance: user.balance })
+				.from(user)
+				.where(eq(user.id, userId))
+				.limit(1);
+			return {
+				sessionId: existing.id,
+				balance: u?.balance ?? 0,
+				transaction: null,
+			};
+		}
+
+		const [u] = await tx
+			.select({ balance: user.balance })
+			.from(user)
+			.where(eq(user.id, userId))
+			.for("update");
+
+		if (!u || u.balance < price) throw new InsufficientFundsError();
+
+		const newBalance = u.balance - price;
+
+		await tx
+			.update(user)
+			.set({ balance: sql`${user.balance} - ${price}` })
+			.where(eq(user.id, userId));
+
+		const txId = randomUUID();
+		const label = "Идея по анамнезу";
+		await tx.insert(walletTransaction).values({
+			id: txId,
+			userId,
+			kind: "anamnesis",
+			amount: -price,
+			label,
+		});
+
+		const sessionId = randomUUID();
+		await tx.insert(anamnesisSession).values({
+			id: sessionId,
+			userId,
+			status: "paid",
+		});
+
+		return {
+			sessionId,
+			balance: newBalance,
+			transaction: {
+				id: txId,
+				kind: "anamnesis",
+				amount: -price,
+				label,
+				createdAt: new Date().toISOString(),
+			},
+		};
+	});
+}
+
+/** Проверяет, что у пользователя есть оплаченная (неиспользованная) сессия. */
+export async function hasPaidAnamnesisSession({
+	userId,
+	sessionId,
+}: {
+	userId: string;
+	sessionId: string;
+}): Promise<boolean> {
+	const [row] = await db
+		.select({ id: anamnesisSession.id })
+		.from(anamnesisSession)
+		.where(
+			and(
+				eq(anamnesisSession.id, sessionId),
+				eq(anamnesisSession.userId, userId),
+				eq(anamnesisSession.status, "paid"),
+			),
+		)
+		.limit(1);
+	return Boolean(row);
+}
+
+/**
+ * Завершает оплаченную сессию: создаёт идею по итогам опроса (source =
+ * anamnesis) и помечает сессию использованной. Списания нет — оплата прошла в
+ * {@link startAnamnesisSession}. Возвращает идею или null, если сессия не найдена
+ * или уже использована.
+ */
+export async function completeAnamnesisSession({
+	userId,
+	sessionId,
+	title,
+	description,
+}: {
+	userId: string;
+	sessionId: string;
+	title: string;
+	description: string;
+}): Promise<Idea | null> {
+	return await db.transaction(async (tx) => {
+		const [s] = await tx
+			.select()
+			.from(anamnesisSession)
+			.where(
+				and(
+					eq(anamnesisSession.id, sessionId),
+					eq(anamnesisSession.userId, userId),
+				),
+			)
+			.for("update");
+
+		if (!s || s.status !== "paid") return null;
+
+		const ideaId = randomUUID();
+		const [ideaRow] = await tx
+			.insert(idea)
+			.values({
+				id: ideaId,
+				userId,
+				title,
+				description,
+				source: "anamnesis",
+			})
+			.returning();
+
+		await tx
+			.update(anamnesisSession)
+			.set({ status: "used", usedAt: new Date(), ideaId })
+			.where(eq(anamnesisSession.id, sessionId));
+
+		return toClientIdea(ideaRow);
 	});
 }

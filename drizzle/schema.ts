@@ -92,6 +92,34 @@ export const idea = pgTable(
 );
 
 /**
+ * Сессия живого опроса «по анамнезу». Создаётся при предоплате (status `paid`):
+ * оплата списывается ДО первого обращения к нейросети, что гейтит вопросы
+ * опроса. При успешном подборе идеи сессия помечается `used` и связывается с
+ * созданной идеей. Незавершённая оплаченная сессия переиспользуется при
+ * повторном открытии, чтобы не списывать повторно.
+ */
+export const anamnesisSession = pgTable(
+	"anamnesis_session",
+	{
+		id: text("id").primaryKey(),
+		userId: text("user_id")
+			.notNull()
+			.references(() => user.id, { onDelete: "cascade" }),
+		// paid | used
+		status: text("status").notNull().default("paid"),
+		// Идея, созданная по итогам опроса (после успешного подбора).
+		ideaId: text("idea_id").references(() => idea.id, {
+			onDelete: "set null",
+		}),
+		createdAt: timestamp("created_at").notNull().defaultNow(),
+		usedAt: timestamp("used_at"),
+	},
+	(table) => [
+		index("anamnesis_session_user_idx").on(table.userId, table.status),
+	],
+);
+
+/**
  * Пул готовых идей для бесплатной выдачи «из каталога».
  *
  * Идея выдаётся ровно один раз глобально: при выдаче проставляются

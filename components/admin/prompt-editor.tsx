@@ -1,6 +1,6 @@
 "use client";
 
-import { DEEPSEEK_MODEL_IDS } from "@/lib/llm/prompts";
+import { DEEPSEEK_MODEL_IDS, requiredPlaceholderFor } from "@/lib/llm/prompts";
 import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -37,6 +37,7 @@ export function PromptEditor({ template }: { template: PromptEditorData }) {
 		template.userPromptTemplate,
 	);
 	const [isActive, setIsActive] = useState(template.isActive);
+	const placeholder = requiredPlaceholderFor(template.key);
 	const [busy, setBusy] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [success, setSuccess] = useState<string | null>(null);
@@ -191,8 +192,8 @@ export function PromptEditor({ template }: { template: PromptEditorData }) {
 
 			<div className="space-y-1">
 				<label className={labelCls} htmlFor={`user-${template.id}`}>
-					Промпт пользователя (плейсхолдеры {"{{title}}"} и{" "}
-					{"{{description}}"})
+					Промпт пользователя (обязательный плейсхолдер{" "}
+					<code className="text-stone-300">{placeholder}</code>)
 				</label>
 				<textarea
 					id={`user-${template.id}`}

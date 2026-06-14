@@ -1,8 +1,8 @@
 "use client";
 
 import type { RichAnalysisReport } from "@/lib/analysis/rich-types";
+import type { AnamnesisExchange } from "@/lib/ideas/anamnesis";
 import { PRICES } from "@/lib/ideas/constants";
-import { ANAMNESIS_RESULT_POOL } from "@/lib/ideas/mock-data";
 import type {
 	AddIdeaMode,
 	AnalysisFilter,
@@ -65,7 +65,19 @@ type IdeasDemoContextValue = {
 		mode?: "initial" | "update",
 	) => Promise<"ok" | "insufficient" | "error">;
 	addCatalogIdea: () => Promise<boolean>;
-	addAnamnesisIdeas: () => Promise<boolean>;
+	/**
+	 * Открывает оплаченную сессию опроса (предоплата до первого вопроса).
+	 * Синхронизирует баланс/историю. Возвращает id сессии или null при ошибке.
+	 */
+	startAnamnesis: () => Promise<string | null>;
+	/**
+	 * Завершает опрос: генерирует идею по диалогу (оплата уже прошла на старте)
+	 * и добавляет её в список. Возвращает идею или null при ошибке (тост показан).
+	 */
+	finishAnamnesis: (
+		sessionId: string,
+		history: AnamnesisExchange[],
+	) => Promise<Idea | null>;
 	filteredIdeas: Idea[];
 	stats: {
 		total: number;
@@ -109,12 +121,6 @@ function filterIdeas(ideas: Idea[], filter: AnalysisFilter): Idea[] {
 	}
 }
 
-let txCounter = 100;
-
-function nextTxId() {
-	return `tx${++txCounter}`;
-}
-
 type IdeasDemoProviderProps = {
 	children: ReactNode;
 	/** Реальный баланс из БД (приветственный бонус + пополнения). */
@@ -146,7 +152,6 @@ export function IdeasDemoProvider({
 	const [sort, setSort] = useState<SortOption>("newest");
 	const [activeDialog, setActiveDialog] = useState<AddIdeaMode | null>(null);
 	const [toast, setToast] = useState<Toast | null>(null);
-	const [anamnesisIdx, setAnamnesisIdx] = useState(0);
 	const toastCounter = useRef(0);
 	const toastTimer = useRef<number | undefined>(undefined);
 
@@ -159,13 +164,6 @@ export function IdeasDemoProvider({
 			() => setToast(null),
 			TOAST_DURATION_MS,
 		);
-	}, []);
-
-	const appendTransaction = useCallback((tx: Omit<Transaction, "id">) => {
-		setTransactions((prev) => [
-			{ ...tx, id: nextTxId(), createdAt: tx.createdAt ?? new Date().toISOString() },
-			...prev,
-		]);
 	}, []);
 
 	// Результат возврата с оплаты (?topup=success|pending|canceled). Баланс уже
@@ -466,31 +464,82 @@ export function IdeasDemoProvider({
 		}
 	}, [catalogStatus, showToast]);
 
-	const addAnamnesisIdeas = useCallback(async () => {
-		const price = PRICES.anamnesis;
-		if (balance < price) return false;
-		const template =
-			ANAMNESIS_RESULT_POOL[anamnesisIdx % ANAMNESIS_RESULT_POOL.length];
-		const idea = await persistIdea(
-			template.title,
-			template.description,
-			"anamnesis",
-		);
-		if (!idea) return false;
-		setAnamnesisIdx((i) => i + 1);
-		// NOTE: списание баланса пока косметическое (без записи в БД) — реальная
-		// тарификация генерации появится вместе с биллингом анализа.
-		setBalance((b) => b - price);
-		appendTransaction({
-			kind: "anamnesis",
-			amount: -price,
-			label: "Идея по анамнезу",
-			createdAt: new Date().toISOString(),
-		});
-		setActiveDialog(null);
-		showToast(`Идея по анамнезу сгенерирована · −${price} ₽`, "success");
-		return true;
-	}, [anamnesisIdx, balance, appendTransaction, persistIdea, showToast]);
+	/**
+	 * Предоплата опроса: открывает (или переиспользует) оплаченную сессию.
+	 * Списание происходит ДО первого вопроса. Возвращает id сессии или null.
+	 */
+	const startAnamnesis = useCallback(async (): Promise<string | null> => {
+		if (balance < PRICES.anamnesis) {
+			showToast("Недостаточно средств — пополните баланс", "error");
+			return null;
+		}
+		try {
+			const res = await fetch("/api/ideas/anamnesis/start", {
+				method: "POST",
+			});
+			const data = (await res.json().catch(() => ({}))) as {
+				error?: string;
+				sessionId?: string;
+				balance?: number;
+				transaction?: Transaction | null;
+			};
+			if (res.status === 402) {
+				showToast(
+					data.error ?? "Недостаточно средств — пополните баланс",
+					"error",
+				);
+				return null;
+			}
+			if (!res.ok || !data.sessionId || typeof data.balance !== "number") {
+				showToast(data.error ?? "Не удалось начать подбор", "error");
+				return null;
+			}
+			setBalance(data.balance);
+			if (data.transaction) {
+				const tx = data.transaction;
+				setTransactions((prev) => [tx, ...prev]);
+			}
+			return data.sessionId;
+		} catch {
+			showToast("Сеть недоступна — попробуйте позже", "error");
+			return null;
+		}
+	}, [balance, showToast]);
+
+	/**
+	 * Завершает опрос: генерирует идею по диалогу (оплата уже прошла на старте)
+	 * и добавляет её в список. Модалку не закрывает — она показывает результат.
+	 */
+	const finishAnamnesis = useCallback(
+		async (
+			sessionId: string,
+			history: AnamnesisExchange[],
+		): Promise<Idea | null> => {
+			try {
+				const res = await fetch("/api/ideas/anamnesis", {
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({ sessionId, history }),
+				});
+				const data = (await res.json().catch(() => ({}))) as {
+					error?: string;
+					idea?: Idea;
+				};
+				if (!res.ok || !data.idea) {
+					showToast(data.error ?? "Не удалось подобрать идею", "error");
+					return null;
+				}
+				const idea = data.idea;
+				setIdeas((prev) => [idea, ...prev]);
+				showToast("Идея по анамнезу готова", "success");
+				return idea;
+			} catch {
+				showToast("Сеть недоступна — попробуйте позже", "error");
+				return null;
+			}
+		},
+		[showToast],
+	);
 
 	const filteredIdeas = useMemo(
 		() => sortIdeas(filterIdeas(ideas, filter), sort),
@@ -530,7 +579,8 @@ export function IdeasDemoProvider({
 		setIdeaArchived,
 		analyzeIdea,
 		addCatalogIdea,
-		addAnamnesisIdeas,
+		startAnamnesis,
+		finishAnamnesis,
 		filteredIdeas,
 		stats,
 	};

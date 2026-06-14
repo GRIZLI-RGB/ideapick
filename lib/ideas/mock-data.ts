@@ -1,24 +1,5 @@
 import type { Idea } from "@/lib/ideas/types";
 
-export const ANAMNESIS_RESULT_POOL: Omit<
-	Idea,
-	"id" | "createdAt" | "archived"
->[] = [
-	{
-		title: "Микро-SaaS для фрилансеров: счета + акты",
-		description:
-			"Простой биллинг под самозанятых: шаблоны, напоминания, экспорт для налоговой",
-		score: null,
-		hasAnalysis: false,
-	},
-	{
-		title: "Плагин «умных сниппетов» для Cursor",
-		description: "Каталог промптов под задачу, горячие клавиши, локальный кэш",
-		score: null,
-		hasAnalysis: false,
-	},
-];
-
 /** Демо-данные (только для витрины на /login) — без поля archived. */
 export const INITIAL_IDEAS: Omit<Idea, "archived">[] = [
 	{

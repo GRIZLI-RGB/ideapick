@@ -87,11 +87,18 @@ type CallArgs = {
 	maxTokens: number;
 	/** Принудительный JSON-ответ. */
 	json?: boolean;
+	/** Таймаут одного обращения, мс (по умолчанию 60с). */
+	timeoutMs?: number;
+	/** Сколько раз повторить при сетевой/временной ошибке (по умолчанию 1). */
+	retries?: number;
 };
 
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
 /**
- * Выполняет chat-completion к DeepSeek (OpenAI-совместимый формат). Бросает
- * Error при сетевой/серверной ошибке (как обёртки внешних API в lib/wallet).
+ * Выполняет chat-completion к DeepSeek (OpenAI-совместимый формат) с таймаутом
+ * и повтором при временных сбоях (обрыв сети/VPN, 429, 5xx). Бросает Error при
+ * исчерпании попыток (как обёртки внешних API в lib/wallet).
  */
 export async function callDeepseek({
 	model,
@@ -101,6 +108,8 @@ export async function callDeepseek({
 	temperature,
 	maxTokens,
 	json = true,
+	timeoutMs = 60_000,
+	retries = 1,
 }: CallArgs): Promise<DeepseekResult> {
 	if (!apiKey) {
 		throw new Error("DEEPSEEK_API_KEY не задан");
@@ -111,39 +120,74 @@ export async function callDeepseek({
 		{ role: "user", content: userPrompt },
 	];
 
-	const res = await fetch(`${API_BASE}/chat/completions`, {
-		method: "POST",
-		headers: {
-			Authorization: `Bearer ${apiKey}`,
-			"Content-Type": "application/json",
-		},
-		body: JSON.stringify({
-			model,
-			messages,
-			temperature,
-			max_tokens: maxTokens,
-			thinking: { type: thinking ? "enabled" : "disabled" },
-			...(json ? { response_format: { type: "json_object" } } : {}),
-			stream: false,
-		}),
+	const body = JSON.stringify({
+		model,
+		messages,
+		temperature,
+		max_tokens: maxTokens,
+		thinking: { type: thinking ? "enabled" : "disabled" },
+		...(json ? { response_format: { type: "json_object" } } : {}),
+		stream: false,
 	});
 
-	if (!res.ok) {
-		const text = await res.text().catch(() => "");
-		throw new Error(`DeepSeek request failed (${res.status}): ${text}`);
+	let lastError: unknown;
+
+	for (let attempt = 0; attempt <= retries; attempt++) {
+		const controller = new AbortController();
+		const timer = setTimeout(() => controller.abort(), timeoutMs);
+		try {
+			const res = await fetch(`${API_BASE}/chat/completions`, {
+				method: "POST",
+				headers: {
+					Authorization: `Bearer ${apiKey}`,
+					"Content-Type": "application/json",
+				},
+				body,
+				signal: controller.signal,
+			});
+
+			if (!res.ok) {
+				const text = await res.text().catch(() => "");
+				// 429/5xx — временные, имеет смысл повторить; прочие — сразу ошибка.
+				const retryable = res.status === 429 || res.status >= 500;
+				const error = new Error(
+					`DeepSeek request failed (${res.status}): ${text}`,
+				);
+				if (retryable && attempt < retries) {
+					lastError = error;
+					await sleep(500 * (attempt + 1));
+					continue;
+				}
+				throw error;
+			}
+
+			const data = (await res.json()) as ChatCompletionResponse;
+			const content = data.choices?.[0]?.message?.content ?? "";
+			const usage: DeepseekUsage = data.usage ?? {
+				prompt_tokens: 0,
+				completion_tokens: 0,
+				total_tokens: 0,
+			};
+
+			return {
+				content,
+				usage,
+				costMicroUsd: computeCostMicroUsd(usage, model),
+			};
+		} catch (error) {
+			// Сетевой сбой или таймаут (AbortError) — повторяем, если есть попытки.
+			lastError = error;
+			if (attempt < retries) {
+				await sleep(500 * (attempt + 1));
+				continue;
+			}
+			throw error;
+		} finally {
+			clearTimeout(timer);
+		}
 	}
 
-	const data = (await res.json()) as ChatCompletionResponse;
-	const content = data.choices?.[0]?.message?.content ?? "";
-	const usage: DeepseekUsage = data.usage ?? {
-		prompt_tokens: 0,
-		completion_tokens: 0,
-		total_tokens: 0,
-	};
-
-	return {
-		content,
-		usage,
-		costMicroUsd: computeCostMicroUsd(usage, model),
-	};
+	throw lastError instanceof Error
+		? lastError
+		: new Error("DeepSeek request failed");
 }

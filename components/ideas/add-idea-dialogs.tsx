@@ -5,7 +5,14 @@ import {
 	useIdeasDemo,
 	type ToastKind,
 } from "@/components/ideas/ideas-demo-provider";
+import {
+	ANAMNESIS_ANSWER_MAX,
+	ANAMNESIS_MAX_QUESTIONS,
+	ANAMNESIS_MIN_QUESTIONS,
+	type AnamnesisExchange,
+} from "@/lib/ideas/anamnesis";
 import { PRICES } from "@/lib/ideas/constants";
+import type { Idea } from "@/lib/ideas/types";
 import {
 	getFillLevel,
 	IDEA_DESCRIPTION_GOOD,
@@ -19,6 +26,7 @@ import {
 import { AnimatePresence, motion } from "framer-motion";
 import {
 	AlertCircle,
+	ArrowRight,
 	Briefcase,
 	Building2,
 	CalendarClock,
@@ -39,22 +47,8 @@ import {
 	Zap,
 	type LucideIcon,
 } from "lucide-react";
+import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-
-const ANAMNESIS_STEPS = [
-	{
-		question: "Какой у вас основной навык?",
-		options: ["Разработка", "Дизайн", "Маркетинг", "Другое"],
-	},
-	{
-		question: "Сколько времени готовы уделять в неделю?",
-		options: ["До 5 ч", "5–15 ч", "15+ ч"],
-	},
-	{
-		question: "Предпочитаемая модель?",
-		options: ["SaaS / подписка", "Разовая оплата", "Не важно"],
-	},
-];
 
 // ---------------------------------------------------------------------------
 // Трёхсегментный индикатор заполнения поля
@@ -560,75 +554,406 @@ function CatalogDialog({ onClose }: { onClose: () => void }) {
 	);
 }
 
-function AnamnesisDialog({ onClose }: { onClose: () => void }) {
-	const { addAnamnesisIdeas, balance } = useIdeasDemo();
-	const [step, setStep] = useState(0);
-	const [answers, setAnswers] = useState<string[]>([]);
-	const [loading, setLoading] = useState(false);
-	const current = ANAMNESIS_STEPS[step];
-	const isConfirm = step >= ANAMNESIS_STEPS.length;
-	const canPay = balance >= PRICES.anamnesis;
+// ---------------------------------------------------------------------------
+// Живой опрос (Акинатор для идей): ИИ ведёт диалог и в конце подбирает идею
+// ---------------------------------------------------------------------------
 
-	if (isConfirm) {
-		return (
-			<DialogShell title="Генерация по анамнезу" onClose={onClose}>
-				<p className="text-sm text-stone-400">
-					AI сгенерирует идею на основе ваших ответов. Списание с
-					баланса после подтверждения.
-				</p>
-				<ul className="mt-3 space-y-1.5 text-xs text-stone-500">
-					{answers.map((a, i) => (
-						<li key={i}>
-							{ANAMNESIS_STEPS[i].question}{" "}
-							<span className="text-stone-400">→ {a}</span>
-						</li>
-					))}
-				</ul>
-				<button
-					type="button"
-					disabled={!canPay || loading}
-					onClick={async () => {
-						setLoading(true);
-						const ok = await addAnamnesisIdeas();
-						if (!ok) setLoading(false);
+type AnamnesisQuestion = { question: string; options: string[] };
+
+/** Анимированные точки «ИИ печатает». */
+function TypingDots() {
+	return (
+		<span className="flex items-center gap-1">
+			{[0, 1, 2].map((i) => (
+				<motion.span
+					key={i}
+					className="block size-1.5 rounded-full bg-amber-400/80"
+					animate={{ opacity: [0.3, 1, 0.3], y: [0, -2, 0] }}
+					transition={{
+						duration: 0.9,
+						repeat: Infinity,
+						delay: i * 0.15,
+						ease: "easeInOut",
 					}}
-					className="mt-5 flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-amber-500 py-2.5 text-sm font-semibold text-stone-950 transition hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-50"
-				>
-					{loading ? (
-						<Loader2 className="size-4 animate-spin" />
-					) : null}
-					{canPay
-						? `Сгенерировать · ${PRICES.anamnesis} ₽`
-						: "Недостаточно средств"}
-				</button>
+				/>
+			))}
+		</span>
+	);
+}
+
+/** Реплика ИИ-ведущего (слева, с аватаром-искрой). */
+function AiBubble({ children }: { children: React.ReactNode }) {
+	return (
+		<div className="flex items-start gap-2.5">
+			<span className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-lg bg-stone-800 text-amber-400 ring-1 ring-amber-500/20">
+				<Sparkles className="size-3.5" />
+			</span>
+			<div className="max-w-[85%] rounded-2xl rounded-tl-sm border border-stone-800 bg-stone-950/60 px-3.5 py-2.5 text-sm leading-relaxed text-stone-200">
+				{children}
+			</div>
+		</div>
+	);
+}
+
+/** Ответ пользователя (справа, янтарный чип). */
+function UserBubble({ children }: { children: React.ReactNode }) {
+	return (
+		<div className="flex justify-end">
+			<div className="max-w-[85%] rounded-2xl rounded-tr-sm bg-amber-500/15 px-3.5 py-2 text-sm text-amber-50 ring-1 ring-amber-500/20">
+				{children}
+			</div>
+		</div>
+	);
+}
+
+type AnamnesisPhase =
+	| "intro" // приветствие + предоплата (до первого вопроса)
+	| "starting" // идёт оплата/открытие сессии
+	| "loading" // запрашиваем следующий вопрос
+	| "asking" // показываем текущий вопрос
+	| "generating" // финальный подбор идеи
+	| "fetchError" // не удалось получить вопрос
+	| "finishError"; // не удалось подобрать идею
+
+function AnamnesisDialog({ onClose }: { onClose: () => void }) {
+	const { startAnamnesis, finishAnamnesis, balance, openWallet } =
+		useIdeasDemo();
+	const [sessionId, setSessionId] = useState<string | null>(null);
+	const [history, setHistory] = useState<AnamnesisExchange[]>([]);
+	const [current, setCurrent] = useState<AnamnesisQuestion | null>(null);
+	const [phase, setPhase] = useState<AnamnesisPhase>("intro");
+	const [result, setResult] = useState<Idea | null>(null);
+	const [customOpen, setCustomOpen] = useState(false);
+	const [customText, setCustomText] = useState("");
+	const scrollEndRef = useRef<HTMLDivElement>(null);
+
+	const canPay = balance >= PRICES.anamnesis;
+	const canFinish = history.length >= ANAMNESIS_MIN_QUESTIONS;
+
+	// Прокрутка к последней реплике при каждом изменении диалога/состояния.
+	useEffect(() => {
+		scrollEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+	}, [history, current, phase]);
+
+	// Финальный подбор идеи по собранному диалогу (оплата уже прошла).
+	const runGenerate = async (sid: string, forHistory: AnamnesisExchange[]) => {
+		setPhase("generating");
+		const idea = await finishAnamnesis(sid, forHistory);
+		if (idea) {
+			setResult(idea);
+		} else {
+			setPhase("finishError");
+		}
+	};
+
+	// Запрос следующего вопроса. Фазу «loading» выставляют вызывающие
+	// (обработчики событий), чтобы не дёргать setState синхронно в эффекте.
+	const fetchNext = async (sid: string, next: AnamnesisExchange[]) => {
+		try {
+			const res = await fetch("/api/ideas/anamnesis/next", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ sessionId: sid, history: next }),
+			});
+			const data = (await res.json().catch(() => ({}))) as {
+				step?:
+					| { done: false; question: string; options: string[] }
+					| { done: true };
+			};
+			if (!res.ok || !data.step) {
+				setPhase("fetchError");
+				return;
+			}
+			if (data.step.done) {
+				// ИИ собрал достаточно — переходим к финальному подбору.
+				await runGenerate(sid, next);
+				return;
+			}
+			setCurrent({
+				question: data.step.question,
+				options: data.step.options,
+			});
+			setPhase("asking");
+		} catch {
+			setPhase("fetchError");
+		}
+	};
+
+	// Предоплата и старт опроса: списываем, открываем сессию, тянем первый вопрос.
+	const start = async () => {
+		if (!canPay || phase === "starting") return;
+		setPhase("starting");
+		const sid = await startAnamnesis();
+		if (!sid) {
+			setPhase("intro");
+			return;
+		}
+		setSessionId(sid);
+		setPhase("loading");
+		await fetchNext(sid, []);
+	};
+
+	const answer = (value: string) => {
+		const text = value.trim();
+		if (!text || !current || !sessionId) return;
+		const next = [...history, { question: current.question, answer: text }];
+		setHistory(next);
+		setCurrent(null);
+		setCustomOpen(false);
+		setCustomText("");
+		if (next.length >= ANAMNESIS_MAX_QUESTIONS) {
+			void runGenerate(sessionId, next);
+		} else {
+			setPhase("loading");
+			void fetchNext(sessionId, next);
+		}
+	};
+
+	const retryFetch = () => {
+		if (!sessionId) return;
+		setPhase("loading");
+		void fetchNext(sessionId, history);
+	};
+
+	// --- Результат подбора -----------------------------------------------
+	if (result) {
+		return (
+			<DialogShell title="Идея готова" onClose={onClose}>
+				<div className="relative mx-auto mt-1 flex size-16 items-center justify-center">
+					<div
+						className="absolute inset-0 rounded-3xl bg-amber-500/20 blur-2xl"
+						aria-hidden
+					/>
+					<motion.div
+						initial={{ scale: 0.8, rotate: -6 }}
+						animate={{ scale: 1, rotate: 0 }}
+						transition={{ type: "spring", damping: 12, stiffness: 200 }}
+						className="relative flex size-14 items-center justify-center rounded-2xl border border-amber-500/30 bg-gradient-to-b from-stone-800 to-stone-900 shadow-lg shadow-black/40"
+					>
+						<Sparkles className="size-6 text-amber-400" />
+					</motion.div>
+				</div>
+
+				<div className="mt-4 rounded-2xl border border-stone-800 bg-stone-950/60 p-4">
+					<h3 className="text-base font-semibold leading-snug text-stone-50">
+						{result.title}
+					</h3>
+					<p className="mt-2 text-sm leading-relaxed text-stone-400">
+						{result.description}
+					</p>
+				</div>
+
+				<p className="mt-3 text-center text-xs text-stone-500">
+					Идея добавлена в ваш список. Запустите анализ, чтобы оценить её
+					потенциал.
+				</p>
+
+				<div className="mt-4 flex gap-2">
+					<button
+						type="button"
+						onClick={onClose}
+						className="flex-1 cursor-pointer rounded-xl border border-stone-700 py-2.5 text-sm font-medium text-stone-300 transition hover:bg-stone-800"
+					>
+						Закрыть
+					</button>
+					<Link
+						href={`/app/ideas/${result.id}`}
+						onClick={onClose}
+						className="flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-xl bg-amber-500 py-2.5 text-sm font-semibold text-stone-950 transition hover:bg-amber-400"
+					>
+						Открыть идею
+						<ArrowRight className="size-4" />
+					</Link>
+				</div>
 			</DialogShell>
 		);
 	}
 
+	const isIntro = phase === "intro" || phase === "starting";
+
+	// --- Основной диалог --------------------------------------------------
 	return (
-		<DialogShell title="Анамнез" onClose={onClose}>
-			<p className="mb-1 text-xs font-medium text-amber-500/90">
-				Шаг {step + 1} из {ANAMNESIS_STEPS.length}
-			</p>
-			<p className="text-sm font-medium text-stone-200">
-				{current.question}
-			</p>
-			<div className="mt-4 space-y-2">
-				{current.options.map((opt) => (
-					<button
-						key={opt}
-						type="button"
-						onClick={() => {
-							const next = [...answers, opt];
-							setAnswers(next);
-							setStep((s) => s + 1);
-						}}
-						className="w-full cursor-pointer rounded-xl border border-stone-700 bg-stone-950 px-4 py-2.5 text-left text-sm text-stone-300 transition hover:border-amber-500/40 hover:bg-stone-800/80"
-					>
-						{opt}
-					</button>
+		<DialogShell title="Подбор идеи" onClose={onClose}>
+			<div className="space-y-3">
+				<AiBubble>
+					Привет! Я подберу бизнес-идею под вас: задам несколько коротких
+					вопросов и в конце предложу самую подходящую.
+				</AiBubble>
+
+				{/* Предоплата прямо в чате — до первого вопроса к нейросети */}
+				{isIntro ? (
+					canPay ? (
+						<>
+							<AiBubble>
+								Подбор стоит {PRICES.anamnesis} ₽ — спишется с баланса
+								перед стартом. Дальше вопросы бесплатные. Начнём?
+							</AiBubble>
+							<div className="flex justify-end">
+								<button
+									type="button"
+									onClick={start}
+									disabled={phase === "starting"}
+									className="flex cursor-pointer items-center gap-2 rounded-2xl rounded-tr-sm bg-amber-500 px-4 py-2.5 text-sm font-semibold text-stone-950 transition hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-60"
+								>
+									{phase === "starting" ? (
+										<Loader2 className="size-4 animate-spin" />
+									) : null}
+									Начать подбор · {PRICES.anamnesis} ₽
+								</button>
+							</div>
+						</>
+					) : (
+						<>
+							<AiBubble>
+								Для подбора нужно {PRICES.anamnesis} ₽, а на балансе
+								сейчас {balance} ₽. Пополните баланс — и вернёмся к
+								подбору.
+							</AiBubble>
+							<div className="flex justify-end">
+								<button
+									type="button"
+									onClick={() => {
+										onClose();
+										openWallet();
+									}}
+									className="flex cursor-pointer items-center gap-1.5 rounded-2xl rounded-tr-sm bg-amber-500 px-4 py-2.5 text-sm font-semibold text-stone-950 transition hover:bg-amber-400"
+								>
+									Пополнить баланс
+									<ArrowRight className="size-4" />
+								</button>
+							</div>
+						</>
+					)
+				) : null}
+
+				{history.map((e, i) => (
+					<div key={i} className="space-y-3">
+						<AiBubble>{e.question}</AiBubble>
+						<UserBubble>{e.answer}</UserBubble>
+					</div>
 				))}
+
+				{phase === "asking" && current ? (
+					<AiBubble>{current.question}</AiBubble>
+				) : null}
+
+				{phase === "loading" ? (
+					<AiBubble>
+						<TypingDots />
+					</AiBubble>
+				) : null}
+
+				{phase === "generating" ? (
+					<AiBubble>
+						<span className="flex items-center gap-2">
+							<Loader2 className="size-4 animate-spin text-amber-400" />
+							Подбираю идею под ваши ответы…
+						</span>
+					</AiBubble>
+				) : null}
+
+				{phase === "fetchError" ? (
+					<AiBubble>
+						<span className="text-rose-300">
+							Не удалось получить вопрос.
+						</span>{" "}
+						<button
+							type="button"
+							onClick={retryFetch}
+							className="cursor-pointer font-medium text-amber-400 underline-offset-2 hover:underline"
+						>
+							Повторить
+						</button>
+					</AiBubble>
+				) : null}
+
+				{phase === "finishError" ? (
+					<AiBubble>
+						<span className="text-rose-300">
+							Не удалось подобрать идею.
+						</span>{" "}
+						<button
+							type="button"
+							onClick={() =>
+								sessionId && void runGenerate(sessionId, history)
+							}
+							className="cursor-pointer font-medium text-amber-400 underline-offset-2 hover:underline"
+						>
+							Попробовать снова
+						</button>
+					</AiBubble>
+				) : null}
+
+				<div ref={scrollEndRef} />
 			</div>
+
+			{/* Варианты ответа + свой ответ + ранний подбор — всё внутри чата */}
+			{phase === "asking" && current ? (
+				<div className="mt-4 space-y-2">
+					{current.options.map((opt) => (
+						<button
+							key={opt}
+							type="button"
+							onClick={() => answer(opt)}
+							className="flex w-full cursor-pointer items-center justify-between gap-2 rounded-xl border border-stone-700 bg-stone-950 px-4 py-2.5 text-left text-sm text-stone-300 transition hover:border-amber-500/40 hover:bg-stone-800/80"
+						>
+							{opt}
+							<ArrowRight className="size-3.5 shrink-0 text-stone-600" />
+						</button>
+					))}
+
+					{customOpen ? (
+						<form
+							onSubmit={(e) => {
+								e.preventDefault();
+								answer(customText);
+							}}
+							className="flex items-center gap-2"
+						>
+							<input
+								value={customText}
+								onChange={(e) =>
+									setCustomText(
+										e.target.value.slice(0, ANAMNESIS_ANSWER_MAX),
+									)
+								}
+								maxLength={ANAMNESIS_ANSWER_MAX}
+								placeholder="Свой ответ…"
+								className="w-full rounded-xl border border-stone-700 bg-stone-950 px-3 py-2.5 text-sm text-stone-100 outline-none transition placeholder:text-stone-600 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20"
+								autoFocus
+							/>
+							<button
+								type="submit"
+								disabled={!customText.trim()}
+								className="flex size-10 shrink-0 cursor-pointer items-center justify-center rounded-xl bg-amber-500 text-stone-950 transition hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-50"
+								aria-label="Отправить ответ"
+							>
+								<ArrowRight className="size-4" />
+							</button>
+						</form>
+					) : (
+						<button
+							type="button"
+							onClick={() => setCustomOpen(true)}
+							className="flex cursor-pointer items-center gap-1.5 px-1 text-xs font-medium text-stone-500 transition hover:text-stone-300"
+						>
+							<Sparkles className="size-3.5 text-amber-500/80" />
+							Ответить своими словами
+						</button>
+					)}
+
+					{canFinish && sessionId ? (
+						<button
+							type="button"
+							onClick={() => void runGenerate(sessionId, history)}
+							className="mt-1 flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-amber-500/30 px-4 py-2 text-xs font-medium text-amber-300 transition hover:border-amber-500/50 hover:bg-amber-500/5"
+						>
+							Достаточно — подобрать идею
+							<ArrowRight className="size-3.5" />
+						</button>
+					) : null}
+				</div>
+			) : null}
 		</DialogShell>
 	);
 }
