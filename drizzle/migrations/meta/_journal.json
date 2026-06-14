@@ -57,6 +57,13 @@
       "when": 1781417008537,
       "tag": "0007_slimy_felicia_hardy",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1781433661392,
+      "tag": "0008_tearful_rogue",
+      "breakpoints": true
     }
   ]
 }

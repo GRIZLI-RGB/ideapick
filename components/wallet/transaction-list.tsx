@@ -6,6 +6,7 @@ import {
 	ArrowDownLeft,
 	ArrowUpRight,
 	Gift,
+	RotateCcw,
 	Sparkles,
 	Wallet,
 } from "lucide-react";
@@ -22,6 +23,7 @@ const KIND_META: Record<
 	bonus: { icon: Gift, credit: true },
 	anamnesis: { icon: Sparkles, credit: false },
 	analysis: { icon: ArrowUpRight, credit: false },
+	refund: { icon: RotateCcw, credit: true },
 	adjustment: { icon: Wallet, credit: true },
 };
 

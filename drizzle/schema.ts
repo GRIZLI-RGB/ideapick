@@ -81,6 +81,10 @@ export const idea = pgTable(
 		analysisReport: jsonb("analysis_report").$type<RichAnalysisReport>(),
 		// null | pending | ok | failed — статус последнего запуска анализа.
 		analysisStatus: text("analysis_status"),
+		// id транзакции списания за текущий/последний запуск анализа. Нужен, чтобы
+		// надёжно вернуть деньги при сбое генерации — в т.ч. из «сторожа» зависших
+		// pending после рестарта процесса (когда фоновая задача не довыполнилась).
+		analysisChargeTxId: text("analysis_charge_tx_id"),
 		// manual | catalog | anamnesis — источник появления идеи.
 		source: text("source").notNull().default("manual"),
 		// null — активная; дата — когда перенесена в архив (скрыта из списка).

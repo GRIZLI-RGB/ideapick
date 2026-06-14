@@ -1,7 +1,11 @@
-import { NextResponse, type NextRequest } from "next/server";
+import { NextResponse, after, type NextRequest } from "next/server";
 import { auth } from "@/lib/auth/auth";
-import { generateAnalysis } from "@/lib/llm/analysis";
-import { markAnalysisFailed, saveAnalysisResult } from "@/lib/ideas/service";
+import { rateLimitGuard } from "@/lib/rate-limit";
+import {
+	runAnalysisJob,
+	sweepStaleAnalysis,
+} from "@/lib/ideas/analysis-pipeline";
+import { getAnalysisRow } from "@/lib/ideas/service";
 import {
 	AnalysisAlreadyChargedError,
 	chargeForAnalysis,
@@ -9,10 +13,13 @@ import {
 } from "@/lib/wallet/service";
 
 /**
- * Запуск AI-анализа идеи: списывает стоимость, генерирует отчёт нейросетью и
- * сохраняет его. `mode: "update"` — повторный анализ (списывает каждый раз),
- * по умолчанию — первый запуск (идемпотентен). Деньги списываются до генерации;
- * при сбое генерации возврат выполняется вручную из админки.
+ * Запуск AI-анализа идеи. Списывает стоимость и запускает генерацию в фоне
+ * (`after()`), сразу отвечая `status: "pending"` — клиент далее опрашивает статус
+ * (GET ниже). `mode: "update"` — повторный анализ (списывает каждый раз), по
+ * умолчанию — первый запуск (идемпотентен).
+ *
+ * Возврат при сбое генерации выполняется автоматически внутри фоновой задачи
+ * (см. `runAnalysisJob`), поэтому переживает закрытие вкладки.
  */
 export async function POST(
 	request: NextRequest,
@@ -22,6 +29,15 @@ export async function POST(
 	if (!session?.user) {
 		return NextResponse.json({ error: "Не авторизован" }, { status: 401 });
 	}
+	const userId = session.user.id;
+
+	// Защита от частых запусков анализа (даблклик/спам дорогой AI-операции).
+	const limited = rateLimitGuard({
+		key: `analyze:${userId}`,
+		limit: 10,
+		windowMs: 60_000,
+	});
+	if (limited) return limited;
 
 	const { id } = await params;
 
@@ -33,13 +49,13 @@ export async function POST(
 	}
 	const mode = body.mode === "update" ? "update" : "initial";
 
+	// Если предыдущий запуск «завис» в pending (рестарт во время генерации) —
+	// разруливаем его до списания, иначе charge упрётся в защиту от повтора.
+	await sweepStaleAnalysis({ userId, ideaId: id }).catch(() => {});
+
 	let charge;
 	try {
-		charge = await chargeForAnalysis({
-			userId: session.user.id,
-			ideaId: id,
-			mode,
-		});
+		charge = await chargeForAnalysis({ userId, ideaId: id, mode });
 	} catch (error) {
 		if (error instanceof InsufficientFundsError) {
 			return NextResponse.json(
@@ -48,8 +64,9 @@ export async function POST(
 			);
 		}
 		if (error instanceof AnalysisAlreadyChargedError) {
+			// Анализ уже в полёте — клиент просто продолжит опрашивать статус.
 			return NextResponse.json(
-				{ error: "Анализ для этой идеи уже запускался", code: "already" },
+				{ error: "Анализ для этой идеи уже выполняется", code: "already" },
 				{ status: 409 },
 			);
 		}
@@ -64,34 +81,52 @@ export async function POST(
 		return NextResponse.json({ error: "Идея не найдена" }, { status: 404 });
 	}
 
-	try {
-		const report = await generateAnalysis({
+	// Генерация — в фоне, после ответа. Возврат при сбое внутри задачи.
+	after(() =>
+		runAnalysisJob({
+			userId,
+			ideaId: id,
 			idea: charge.idea,
 			version: charge.version,
-		});
-		await saveAnalysisResult({
-			userId: session.user.id,
-			ideaId: id,
-			report,
-		});
-		return NextResponse.json({
+			chargeTransactionId: charge.transaction.id,
+		}),
+	);
+
+	return NextResponse.json(
+		{
+			status: "pending",
 			balance: charge.balance,
 			transaction: charge.transaction,
-			report,
-		});
-	} catch (error) {
-		// Списание уже произошло (charge-first) — фиксируем провал, возврат вручную.
-		await markAnalysisFailed({ userId: session.user.id, ideaId: id });
-		console.error("[ideas] ошибка генерации анализа:", error);
-		return NextResponse.json(
-			{
-				error:
-					"Анализ не удался при обращении к нейросети. Средства будут возвращены — напишите в поддержку.",
-				code: "generation",
-				balance: charge.balance,
-				transaction: charge.transaction,
-			},
-			{ status: 502 },
-		);
+		},
+		{ status: 202 },
+	);
+}
+
+/**
+ * Статус анализа для поллинга клиентом: `pending` | `ok` | `failed`. Перед
+ * ответом лениво «подметает» зависшие запуски (возврат денег при необходимости).
+ */
+export async function GET(
+	request: NextRequest,
+	{ params }: { params: Promise<{ id: string }> },
+) {
+	const session = await auth.api.getSession({ headers: request.headers });
+	if (!session?.user) {
+		return NextResponse.json({ error: "Не авторизован" }, { status: 401 });
 	}
+	const userId = session.user.id;
+	const { id } = await params;
+
+	await sweepStaleAnalysis({ userId, ideaId: id }).catch(() => {});
+
+	const row = await getAnalysisRow({ userId, ideaId: id });
+	if (!row) {
+		return NextResponse.json({ error: "Идея не найдена" }, { status: 404 });
+	}
+
+	return NextResponse.json({
+		status: row.status,
+		score: row.score,
+		report: row.status === "ok" ? row.report : null,
+	});
 }

@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { auth } from "@/lib/auth/auth";
+import { rateLimitGuard } from "@/lib/rate-limit";
 import { parseAnamnesisHistory } from "@/lib/ideas/anamnesis";
 import {
 	IdeaGenerationError,
@@ -18,6 +19,14 @@ export async function POST(request: NextRequest) {
 	if (!session?.user) {
 		return NextResponse.json({ error: "Не авторизован" }, { status: 401 });
 	}
+
+	// Каждый шаг — обращение к нейросети; ограничиваем частоту в рамках сессии.
+	const limited = rateLimitGuard({
+		key: `anamnesis-next:${session.user.id}`,
+		limit: 30,
+		windowMs: 60_000,
+	});
+	if (limited) return limited;
 
 	let body: { history?: unknown; sessionId?: unknown };
 	try {

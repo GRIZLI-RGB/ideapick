@@ -3,6 +3,8 @@ export type TransactionKind =
 	| "topup"
 	| "anamnesis"
 	| "analysis"
+	// Автовозврат за анализ, когда генерация упала после списания.
+	| "refund"
 	| "bonus"
 	// Ручная корректировка баланса администратором (+/−).
 	| "adjustment";

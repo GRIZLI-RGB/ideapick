@@ -8,6 +8,7 @@ import type {
 	AnalysisFilter,
 	CatalogStatus,
 	Idea,
+	IdeaAnalysisStatus,
 	SortOption,
 } from "@/lib/ideas/types";
 import { TOP_UP_MAX, TOP_UP_MIN } from "@/lib/wallet/bonus";
@@ -56,14 +57,15 @@ type IdeasDemoContextValue = {
 	deleteIdea: (id: string) => Promise<boolean>;
 	setIdeaArchived: (id: string, archived: boolean) => Promise<boolean>;
 	/**
-	 * Списывает стоимость анализа и фиксирует операцию на сервере. Возвращает
-	 * исход: «ok» — деньги списаны, «insufficient» — не хватает баланса,
-	 * «error» — сетевая/серверная ошибка (тост уже показан).
+	 * Запускает анализ: списывает стоимость и стартует генерацию в фоне на
+	 * сервере, затем провайдер опрашивает статус до `ok`/`failed`. Возвращает:
+	 * «pending» — запуск принят (идёт генерация), «insufficient» — не хватает
+	 * баланса, «error» — не удалось запустить (тост уже показан).
 	 */
 	analyzeIdea: (
 		id: string,
 		mode?: "initial" | "update",
-	) => Promise<"ok" | "insufficient" | "error">;
+	) => Promise<"pending" | "insufficient" | "error">;
 	addCatalogIdea: () => Promise<boolean>;
 	/**
 	 * Открывает оплаченную сессию опроса (предоплата до первого вопроса).
@@ -353,11 +355,115 @@ export function IdeasDemoProvider({
 	 * в состоянии идеи. При сбое генерации деньги уже списаны (возврат вручную) —
 	 * идея помечается как «failed».
 	 */
+	/** Перечитывает баланс и историю из БД (после фоновых изменений: автовозврат). */
+	const refreshWallet = useCallback(async () => {
+		try {
+			const res = await fetch("/api/wallet");
+			if (!res.ok) return;
+			const data = (await res.json()) as {
+				balance?: number;
+				transactions?: Transaction[];
+			};
+			if (typeof data.balance === "number") setBalance(data.balance);
+			if (Array.isArray(data.transactions)) {
+				setTransactions(data.transactions);
+			}
+		} catch {
+			// Молча: следующий рефреш/перезагрузка подтянет актуальные данные.
+		}
+	}, []);
+
+	// id идей, по которым уже крутится поллинг статуса — защита от дублей и
+	// сигнал на остановку (очищается при размонтировании провайдера).
+	const pollingRef = useRef<Set<string>>(new Set());
+	useEffect(() => {
+		const active = pollingRef.current;
+		return () => active.clear();
+	}, []);
+
+	/**
+	 * Опрашивает статус анализа идеи до завершения. На `ok` — подставляет отчёт;
+	 * на `failed` — перечитывает кошелёк (фоновый автовозврат) и показывает тост.
+	 */
+	const startPolling = useCallback(
+		(id: string) => {
+			if (pollingRef.current.has(id)) return;
+			pollingRef.current.add(id);
+
+			const POLL_MS = 2000;
+			const MAX_ATTEMPTS = 160; // ~5.5 мин — заведомо больше серверного sweep
+			let attempts = 0;
+
+			const tick = async () => {
+				if (!pollingRef.current.has(id)) return;
+				attempts += 1;
+				try {
+					const res = await fetch(`/api/ideas/${id}/analyze`);
+					if (res.ok) {
+						const data = (await res.json()) as {
+							status: IdeaAnalysisStatus;
+							score?: number | null;
+							report?: RichAnalysisReport | null;
+						};
+
+						if (data.status === "ok" && data.report) {
+							const report = data.report;
+							setIdeas((prev) =>
+								prev.map((i) =>
+									i.id === id
+										? {
+												...i,
+												report,
+												score: report.score,
+												hasAnalysis: true,
+												analysisStatus: "ok",
+											}
+										: i,
+								),
+							);
+							pollingRef.current.delete(id);
+							return;
+						}
+
+						if (data.status === "failed") {
+							setIdeas((prev) =>
+								prev.map((i) =>
+									i.id === id
+										? { ...i, analysisStatus: "failed" }
+										: i,
+								),
+							);
+							pollingRef.current.delete(id);
+							// Деньги вернулись в фоне — подтягиваем баланс и историю.
+							await refreshWallet();
+							showToast(
+								"Анализ не удался — средства возвращены на баланс",
+								"error",
+							);
+							return;
+						}
+					}
+				} catch {
+					// Временный сбой сети — продолжаем опрос до лимита попыток.
+				}
+
+				if (attempts >= MAX_ATTEMPTS) {
+					pollingRef.current.delete(id);
+					return;
+				}
+				window.setTimeout(tick, POLL_MS);
+			};
+
+			window.setTimeout(tick, POLL_MS);
+		},
+		[refreshWallet, showToast],
+	);
+
 	const analyzeIdea = useCallback(
 		async (
 			id: string,
 			mode: "initial" | "update" = "initial",
-		): Promise<"ok" | "insufficient" | "error"> => {
+		): Promise<"pending" | "insufficient" | "error"> => {
 			const price = PRICES.analysis;
 			if (balance < price) return "insufficient";
 			try {
@@ -369,63 +475,61 @@ export function IdeasDemoProvider({
 				const data = (await res.json().catch(() => ({}))) as {
 					error?: string;
 					code?: string;
+					status?: string;
 					balance?: number;
 					transaction?: Transaction;
-					report?: RichAnalysisReport;
 				};
 
 				if (res.status === 402) return "insufficient";
 
-				// Списание прошло, но генерация упала — баланс/операция актуальны,
-				// идею помечаем неуспешной, чтобы показать состояние ошибки.
-				if (res.status === 502 && data.code === "generation") {
-					if (typeof data.balance === "number") setBalance(data.balance);
-					if (data.transaction) {
-						const tx = data.transaction;
-						setTransactions((prev) => [tx, ...prev]);
-					}
+				// Анализ уже выполняется (даблклик/повторный заход) — просто
+				// продолжаем опрашивать статус, без повторного списания.
+				if (res.status === 409 && data.code === "already") {
 					setIdeas((prev) =>
 						prev.map((i) =>
-							i.id === id ? { ...i, analysisStatus: "failed" } : i,
+							i.id === id ? { ...i, analysisStatus: "pending" } : i,
 						),
 					);
-					showToast(data.error ?? "Анализ не удался", "error");
+					startPolling(id);
+					return "pending";
+				}
+
+				if (
+					res.status !== 202 ||
+					data.status !== "pending" ||
+					typeof data.balance !== "number"
+				) {
+					showToast(data.error ?? "Не удалось запустить анализ", "error");
 					return "error";
 				}
 
-				if (!res.ok || !data.report || typeof data.balance !== "number") {
-					showToast(
-						data.error ?? "Не удалось запустить анализ",
-						"error",
-					);
-					return "error";
-				}
-
-				const report = data.report;
-				const tx = data.transaction;
+				// Списание прошло — синхронизируем баланс/историю и помечаем pending.
 				setBalance(data.balance);
+				const tx = data.transaction;
 				if (tx) setTransactions((prev) => [tx, ...prev]);
 				setIdeas((prev) =>
 					prev.map((i) =>
-						i.id === id
-							? {
-									...i,
-									report,
-									score: report.score,
-									hasAnalysis: true,
-									analysisStatus: "ok",
-								}
-							: i,
+						i.id === id ? { ...i, analysisStatus: "pending" } : i,
 					),
 				);
-				return "ok";
+				startPolling(id);
+				return "pending";
 			} catch {
 				showToast("Сеть недоступна — попробуйте позже", "error");
 				return "error";
 			}
 		},
-		[balance, showToast],
+		[balance, showToast, startPolling],
 	);
+
+	// Возобновление после перезагрузки/навигации: для идей, оставшихся в pending
+	// (генерация идёт в фоне на сервере), продолжаем опрос статуса. Дубли отсекает
+	// сам startPolling, поэтому повторные прогоны эффекта безопасны.
+	useEffect(() => {
+		for (const i of ideas) {
+			if (i.analysisStatus === "pending") startPolling(i.id);
+		}
+	}, [ideas, startPolling]);
 
 	/**
 	 * Запрашивает бесплатную идею дня из каталога. Лимит и отсутствие повторов

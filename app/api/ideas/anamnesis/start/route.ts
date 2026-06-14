@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { auth } from "@/lib/auth/auth";
+import { rateLimitGuard } from "@/lib/rate-limit";
 import {
 	InsufficientFundsError,
 	startAnamnesisSession,
@@ -15,6 +16,13 @@ export async function POST(request: NextRequest) {
 	if (!session?.user) {
 		return NextResponse.json({ error: "Не авторизован" }, { status: 401 });
 	}
+
+	const limited = rateLimitGuard({
+		key: `anamnesis-start:${session.user.id}`,
+		limit: 10,
+		windowMs: 60_000,
+	});
+	if (limited) return limited;
 
 	try {
 		const result = await startAnamnesisSession({ userId: session.user.id });

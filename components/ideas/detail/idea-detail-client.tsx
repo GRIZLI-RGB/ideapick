@@ -9,7 +9,7 @@ import { RichAnalysisReport } from "@/components/ideas/detail/rich/rich-analysis
 import { useIdeasDemo } from "@/components/ideas/ideas-demo-provider";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useState } from "react";
 
 type IdeaDetailClientProps = {
 	id: string;
@@ -20,45 +20,48 @@ export function IdeaDetailClient({ id }: IdeaDetailClientProps) {
 	const { ideas, deleteIdea, setIdeaArchived, analyzeIdea, openWallet } =
 		useIdeasDemo();
 	const [deleting, setDeleting] = useState(false);
-	/** Идёт запуск анализа (списание + генерация на сервере). */
-	const [analyzing, setAnalyzing] = useState(false);
-	/** Анимация прогресса доиграла до конца. */
-	const animationDoneRef = useRef(false);
-	/** Отчёт пришёл с сервера. */
-	const reportReadyRef = useRef(false);
 
 	const idea = ideas.find((i) => i.id === id);
 	const report = idea?.report ?? null;
+	const status = idea?.analysisStatus ?? null;
 
-	// Снимаем оверлей только когда и анимация доиграла, и отчёт готов.
-	const finishIfReady = useCallback(() => {
-		if (animationDoneRef.current && reportReadyRef.current) {
-			setAnalyzing(false);
-		}
-	}, []);
+	/**
+	 * Вошли ли в цикл анализа. Поднимается при старте (или сразу, если идея уже
+	 * считается — возобновление после перезагрузки) и больше не сбрасывается:
+	 * видимостью оверлея дальше управляет производное `showOverlay`.
+	 */
+	const [inCycle, setInCycle] = useState(status === "pending");
+	/** Интро-анимация прошла все шаги (держится на последнем до завершения). */
+	const [animationDone, setAnimationDone] = useState(false);
+
+	// Оверлей держим, пока (1) сервер не завершил запуск и (2) интро-анимация не
+	// доиграла — чтобы появление отчёта ощущалось намеренным даже при мгновенном
+	// ответе. Статусом анализа управляет сервер (поллинг в провайдере).
+	const serverDone = status === "ok" || status === "failed";
+	const showOverlay = inCycle && !(serverDone && animationDone);
+
+	const handleAnimationComplete = useCallback(() => setAnimationDone(true), []);
 
 	const startAnalysis = useCallback(
 		async (mode: "initial" | "update") => {
-			if (analyzing) return;
-			animationDoneRef.current = false;
-			reportReadyRef.current = false;
-			setAnalyzing(true);
+			if (showOverlay) return;
+			setAnimationDone(false);
+			setInCycle(true);
 
 			const result = await analyzeIdea(id, mode);
 			if (result === "insufficient") {
-				setAnalyzing(false);
+				setInCycle(false);
 				openWallet();
 				return;
 			}
 			if (result === "error") {
-				setAnalyzing(false);
+				setInCycle(false);
 				return;
 			}
-			// Успех: отчёт уже в состоянии идеи — дожидаемся конца анимации.
-			reportReadyRef.current = true;
-			finishIfReady();
+			// pending: дальше статус двигают поллинг провайдера; оверлей снимется,
+			// когда статус станет ok/failed и доиграет анимация.
 		},
-		[analyzing, analyzeIdea, id, openWallet, finishIfReady],
+		[showOverlay, analyzeIdea, id, openWallet],
 	);
 
 	if (!idea) {
@@ -97,24 +100,20 @@ export function IdeaDetailClient({ id }: IdeaDetailClientProps) {
 					await deleteIdea(idea.id);
 				}}
 				onUpdateAnalysis={() => {
-					if (!hasAnalysis || analyzing) return;
+					if (!hasAnalysis || showOverlay) return;
 					void startAnalysis("update");
 				}}
 			/>
 
 			<div className="mt-5">
-				{analyzing ? (
+				{showOverlay ? (
 					<IdeaDetailAnalyzing
-						key={`analyze-${report?.version ?? 0}`}
 						title={idea.title}
-						onComplete={() => {
-							animationDoneRef.current = true;
-							finishIfReady();
-						}}
+						onComplete={handleAnimationComplete}
 					/>
 				) : report ? (
 					<RichAnalysisReport report={report} />
-				) : idea.analysisStatus === "failed" ? (
+				) : status === "failed" ? (
 					<IdeaDetailFailed onRetry={() => void startAnalysis("initial")} />
 				) : (
 					<IdeaDetailPending

@@ -5,7 +5,7 @@ import { and, desc, eq } from "drizzle-orm";
 import { db } from "@/drizzle";
 import { idea } from "@/drizzle/schema";
 import type { RichAnalysisReport } from "@/lib/analysis/rich-types";
-import type { Idea } from "@/lib/ideas/types";
+import type { Idea, IdeaAnalysisStatus } from "@/lib/ideas/types";
 import {
 	IDEA_DESCRIPTION_MAX,
 	IDEA_DESCRIPTION_MIN,
@@ -152,6 +152,8 @@ export async function saveAnalysisResult({
 			score: report.score,
 			hasAnalysis: true,
 			analysisStatus: "ok",
+			// Списание успешно «отработано» — возвращать нечего, очищаем ссылку.
+			analysisChargeTxId: null,
 			updatedAt: new Date(),
 		})
 		.where(and(eq(idea.id, ideaId), eq(idea.userId, userId)));
@@ -169,6 +171,49 @@ export async function markAnalysisFailed({
 		.update(idea)
 		.set({ analysisStatus: "failed", updatedAt: new Date() })
 		.where(and(eq(idea.id, ideaId), eq(idea.userId, userId)));
+}
+
+export type AnalysisRow = {
+	status: IdeaAnalysisStatus;
+	report: RichAnalysisReport | null;
+	score: number | null;
+	/** id транзакции списания (для возврата при сбое); null — нечего возвращать. */
+	chargeTxId: string | null;
+	/** Когда строка последний раз менялась — для детекта «зависшего» pending. */
+	updatedAt: Date;
+};
+
+/**
+ * Лёгкое чтение состояния анализа идеи: статус, отчёт, балл и сервисные поля для
+ * возврата/детекта зависаний. Используется поллингом статуса и «сторожем».
+ */
+export async function getAnalysisRow({
+	userId,
+	ideaId,
+}: {
+	userId: string;
+	ideaId: string;
+}): Promise<AnalysisRow | null> {
+	const [row] = await db
+		.select({
+			status: idea.analysisStatus,
+			report: idea.analysisReport,
+			score: idea.score,
+			chargeTxId: idea.analysisChargeTxId,
+			updatedAt: idea.updatedAt,
+		})
+		.from(idea)
+		.where(and(eq(idea.id, ideaId), eq(idea.userId, userId)))
+		.limit(1);
+
+	if (!row) return null;
+	return {
+		status: (row.status ?? null) as IdeaAnalysisStatus,
+		report: row.report ?? null,
+		score: row.score,
+		chargeTxId: row.chargeTxId ?? null,
+		updatedAt: row.updatedAt,
+	};
 }
 
 /** Получает одну идею пользователя (или null). */

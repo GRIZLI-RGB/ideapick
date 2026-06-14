@@ -361,17 +361,22 @@ export async function chargeForAnalysis({
 			.set({ balance: sql`${user.balance} - ${price}` })
 			.where(eq(user.id, userId));
 
-		// Помечаем запуск анализа; отчёт и score проставит роут после генерации.
-		await tx
-			.update(idea)
-			.set({ analysisStatus: "pending", updatedAt: new Date() })
-			.where(eq(idea.id, ideaId));
-
 		const txId = randomUUID();
 		const label =
 			mode === "update"
 				? `Обновление анализа · ${ideaRow.title}`
 				: `Анализ · ${ideaRow.title}`;
+
+		// Помечаем запуск анализа и фиксируем id списания на идее — по нему
+		// безопасно вернём деньги при сбое генерации (в т.ч. из «сторожа»).
+		await tx
+			.update(idea)
+			.set({
+				analysisStatus: "pending",
+				analysisChargeTxId: txId,
+				updatedAt: new Date(),
+			})
+			.where(eq(idea.id, ideaId));
 
 		await tx.insert(walletTransaction).values({
 			id: txId,
@@ -395,6 +400,94 @@ export async function chargeForAnalysis({
 				id: txId,
 				kind: "analysis",
 				amount: -price,
+				label,
+				createdAt: new Date().toISOString(),
+			},
+		};
+	});
+}
+
+export type RefundResult = {
+	balance: number;
+	transaction: Transaction;
+};
+
+/**
+ * Возвращает деньги за анализ, если генерация упала уже после списания.
+ *
+ * Безопасность по требованию «не вернуть лишнего»:
+ *  - возврат привязан к конкретной транзакции списания (`chargeTransactionId`)
+ *    этого запроса; без реального списания этого вида возврата не будет;
+ *  - идемпотентно: id возврата детерминирован (`refund_<chargeTxId>`), повторный
+ *    вызов ничего не зачислит (защита от двойного возврата при ретраях).
+ *
+ * Возвращает новый баланс и транзакцию возврата, либо `null`, если списание не
+ * найдено или возврат по нему уже выполнялся.
+ */
+export async function refundAnalysisCharge({
+	userId,
+	chargeTransactionId,
+}: {
+	userId: string;
+	chargeTransactionId: string;
+}): Promise<RefundResult | null> {
+	const refundId = `refund_${chargeTransactionId}`;
+
+	return await db.transaction(async (tx) => {
+		// Исходное списание за анализ — возврат только по реальному charge.
+		const [charge] = await tx
+			.select()
+			.from(walletTransaction)
+			.where(
+				and(
+					eq(walletTransaction.id, chargeTransactionId),
+					eq(walletTransaction.userId, userId),
+					eq(walletTransaction.kind, "analysis"),
+				),
+			)
+			.for("update");
+
+		// Нет списания или оно не отрицательное (не списание) — возвращать нечего.
+		if (!charge || charge.amount >= 0) return null;
+
+		// Уже возвращали по этому списанию — идемпотентность, без повторного зачисления.
+		const [existing] = await tx
+			.select({ id: walletTransaction.id })
+			.from(walletTransaction)
+			.where(eq(walletTransaction.id, refundId))
+			.limit(1);
+		if (existing) return null;
+
+		const amount = -charge.amount; // делаем сумму положительной (зачисление)
+		const label = `Возврат · ${charge.label}`;
+
+		const [u] = await tx
+			.select({ balance: user.balance })
+			.from(user)
+			.where(eq(user.id, userId))
+			.for("update");
+
+		const newBalance = (u?.balance ?? 0) + amount;
+
+		await tx
+			.update(user)
+			.set({ balance: sql`${user.balance} + ${amount}` })
+			.where(eq(user.id, userId));
+
+		await tx.insert(walletTransaction).values({
+			id: refundId,
+			userId,
+			kind: "refund",
+			amount,
+			label,
+		});
+
+		return {
+			balance: newBalance,
+			transaction: {
+				id: refundId,
+				kind: "refund",
+				amount,
 				label,
 				createdAt: new Date().toISOString(),
 			},

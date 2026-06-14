@@ -1,0 +1,1 @@
+ALTER TABLE "idea" ADD COLUMN "analysis_charge_tx_id" text;

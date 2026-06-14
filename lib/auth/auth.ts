@@ -38,6 +38,16 @@ export const auth = betterAuth({
 		expiresIn: 60 * 60 * 24 * 30, // 30 дней
 		updateAge: 60 * 60 * 24, // продление раз в сутки
 	},
+	// Встроенный rate limit better-auth (in-memory). Включаем в проде; строже —
+	// на запрос magic link, т.к. это рассылка писем и главный вектор спама.
+	rateLimit: {
+		enabled: process.env.NODE_ENV === "production",
+		window: 60,
+		max: 100,
+		customRules: {
+			"/sign-in/magic-link": { window: 60, max: 5 },
+		},
+	},
 	databaseHooks: {
 		user: {
 			create: {
