@@ -54,6 +54,17 @@ type IdeasDemoContextValue = {
 	createIdea: (title: string, description: string) => Promise<boolean>;
 	deleteIdea: (id: string) => Promise<boolean>;
 	setIdeaArchived: (id: string, archived: boolean) => Promise<boolean>;
+	/**
+	 * Списывает стоимость анализа и фиксирует операцию на сервере. Возвращает
+	 * исход: «ok» — деньги списаны, «insufficient» — не хватает баланса,
+	 * «error» — сетевая/серверная ошибка (тост уже показан).
+	 */
+	analyzeIdea: (
+		id: string,
+		mode?: "initial" | "update",
+	) => Promise<"ok" | "insufficient" | "error">;
+	/** Локально помечает идею проанализированной (после показа отчёта). */
+	markIdeaAnalyzed: (id: string, score: number) => void;
 	addCatalogIdea: () => Promise<boolean>;
 	addAnamnesisIdeas: () => Promise<boolean>;
 	filteredIdeas: Idea[];
@@ -340,6 +351,59 @@ export function IdeasDemoProvider({
 	);
 
 	/**
+	 * Запускает анализ идеи с реальным списанием стоимости на сервере. При
+	 * успехе синхронизирует баланс и историю операций; нехватку средств отдаёт
+	 * вызывающему, чтобы тот открыл кошелёк.
+	 */
+	const analyzeIdea = useCallback(
+		async (
+			id: string,
+			mode: "initial" | "update" = "initial",
+		): Promise<"ok" | "insufficient" | "error"> => {
+			const price = PRICES.analysis;
+			if (balance < price) return "insufficient";
+			try {
+				const res = await fetch(`/api/ideas/${id}/analyze`, {
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({ mode }),
+				});
+				if (!res.ok) {
+					if (res.status === 402) return "insufficient";
+					const data = (await res.json().catch(() => ({}))) as {
+						error?: string;
+					};
+					showToast(
+						data.error ?? "Не удалось запустить анализ",
+						"error",
+					);
+					return "error";
+				}
+				const { balance: newBalance, transaction } = (await res.json()) as {
+					balance: number;
+					transaction: Transaction;
+				};
+				setBalance(newBalance);
+				setTransactions((prev) => [transaction, ...prev]);
+				return "ok";
+			} catch {
+				showToast("Сеть недоступна — попробуйте позже", "error");
+				return "error";
+			}
+		},
+		[balance, showToast],
+	);
+
+	/** Помечает идею проанализированной локально (баланс уже списан сервером). */
+	const markIdeaAnalyzed = useCallback((id: string, score: number) => {
+		setIdeas((prev) =>
+			prev.map((i) =>
+				i.id === id ? { ...i, hasAnalysis: true, score } : i,
+			),
+		);
+	}, []);
+
+	/**
 	 * Запрашивает бесплатную идею дня из каталога. Лимит и отсутствие повторов
 	 * гарантирует сервер; здесь только синхронизация состояния и тосты.
 	 */
@@ -438,6 +502,8 @@ export function IdeasDemoProvider({
 		createIdea,
 		deleteIdea,
 		setIdeaArchived,
+		analyzeIdea,
+		markIdeaAnalyzed,
 		addCatalogIdea,
 		addAnamnesisIdeas,
 		filteredIdeas,

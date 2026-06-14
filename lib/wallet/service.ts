@@ -3,8 +3,10 @@ import "server-only";
 import { randomUUID } from "node:crypto";
 import { and, desc, eq, sql } from "drizzle-orm";
 import { db } from "@/drizzle";
-import { payment, user, walletTransaction } from "@/drizzle/schema";
+import { idea, payment, user, walletTransaction } from "@/drizzle/schema";
+import { buildRichMockReport } from "@/lib/analysis/rich-mock";
 import { PRICES } from "@/lib/ideas/constants";
+import { toClientIdea } from "@/lib/ideas/service";
 import { calcTopUpBonus, TOP_UP_MAX, TOP_UP_MIN } from "@/lib/wallet/bonus";
 import type { Transaction, TransactionKind } from "@/lib/wallet/types";
 import {
@@ -273,4 +275,108 @@ export async function capturePayment(paymentId: string): Promise<CaptureResult> 
 		status: result === "succeeded" ? "succeeded" : "pending",
 		returnPath: head.returnPath,
 	};
+}
+
+/** Недостаточно средств на балансе для списания за анализ. */
+export class InsufficientFundsError extends Error {}
+
+/** Анализ уже запускался для этой идеи (защита от повторного списания). */
+export class AnalysisAlreadyChargedError extends Error {}
+
+export type AnalysisChargeMode = "initial" | "update";
+
+export type AnalysisChargeResult = {
+	ideaId: string;
+	score: number;
+	balance: number;
+	transaction: Transaction;
+};
+
+/**
+ * Списывает {@link PRICES.analysis} ₽ за запуск AI-анализа идеи и атомарно
+ * фиксирует операцию в леджере. Балл считается детерминированно из текущего
+ * демо-генератора, чтобы баланс, идея и отчёт оставались согласованными.
+ *
+ * Режимы:
+ *  - `initial` — первый запуск. Идемпотентен: если идея уже проанализирована,
+ *    бросает {@link AnalysisAlreadyChargedError} вместо повторного списания.
+ *  - `update` — повторный анализ по явному действию пользователя; списывает
+ *    каждый раз.
+ *
+ * Бросает {@link InsufficientFundsError} при нехватке средств. Возвращает
+ * `null`, если идея не найдена у пользователя.
+ */
+export async function chargeForAnalysis({
+	userId,
+	ideaId,
+	mode = "initial",
+}: {
+	userId: string;
+	ideaId: string;
+	mode?: AnalysisChargeMode;
+}): Promise<AnalysisChargeResult | null> {
+	const price = PRICES.analysis;
+
+	return await db.transaction(async (tx) => {
+		// Блокируем строку идеи: проверка владельца + защита от гонок двойного
+		// клика/повторного запроса.
+		const [ideaRow] = await tx
+			.select()
+			.from(idea)
+			.where(and(eq(idea.id, ideaId), eq(idea.userId, userId)))
+			.for("update");
+
+		if (!ideaRow) return null;
+		if (mode === "initial" && ideaRow.hasAnalysis) {
+			throw new AnalysisAlreadyChargedError();
+		}
+
+		const [u] = await tx
+			.select({ balance: user.balance })
+			.from(user)
+			.where(eq(user.id, userId))
+			.for("update");
+
+		if (!u || u.balance < price) throw new InsufficientFundsError();
+
+		const score = buildRichMockReport(toClientIdea(ideaRow)).score;
+		const newBalance = u.balance - price;
+
+		await tx
+			.update(user)
+			.set({ balance: sql`${user.balance} - ${price}` })
+			.where(eq(user.id, userId));
+
+		await tx
+			.update(idea)
+			.set({ hasAnalysis: true, score, updatedAt: new Date() })
+			.where(eq(idea.id, ideaId));
+
+		const txId = randomUUID();
+		const label =
+			mode === "update"
+				? `Обновление анализа · ${ideaRow.title}`
+				: `Анализ · ${ideaRow.title}`;
+
+		await tx.insert(walletTransaction).values({
+			id: txId,
+			userId,
+			kind: "analysis",
+			amount: -price,
+			label,
+		});
+
+		return {
+			ideaId,
+			score,
+			balance: newBalance,
+			transaction: {
+				id: txId,
+				kind: "analysis",
+				amount: -price,
+				label,
+				createdAt: new Date().toISOString(),
+			},
+		};
+	});
 }

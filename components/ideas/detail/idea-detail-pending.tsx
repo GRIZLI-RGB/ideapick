@@ -1,112 +1,143 @@
 "use client";
 
+import { PANEL } from "@/components/ideas/detail/idea-detail-shared";
+import { RadarChart } from "@/components/ideas/detail/visual/radar-chart";
+import {
+	ANALYSIS_STEP_MS,
+	ANALYSIS_STEPS,
+	RunningOverlay,
+} from "@/components/ideas/detail/variants/analysis-progress-variants";
+import { useIdeasDemo } from "@/components/ideas/ideas-demo-provider";
+import { ScoreRing } from "@/components/ideas/score-ring";
+import { RICH_RADAR_LABELS } from "@/lib/analysis/rich-types";
 import { PRICES } from "@/lib/ideas/constants";
 import type { Idea } from "@/lib/ideas/types";
-import { motion } from "framer-motion";
-import { Loader2, Sparkles } from "lucide-react";
+import { Loader2, Lock, Wallet } from "lucide-react";
 import { useEffect, useState } from "react";
 
 type IdeaDetailPendingProps = {
 	idea: Idea;
-	/** Демо: запуск анализа без списания — отдаёт готовность отрисовать отчёт. */
+	/** Вызывается после списания и «генерации» — отдаёт готовность отрисовать отчёт. */
 	onAnalyzed: () => void;
 };
 
-/** Шаги «генерации» — имитируют реальный пайплайн (превалидация → поиск →
- *  анализ → сборка), чтобы ожидание ощущалось как работа, а не пустой спиннер. */
-const STEPS = ["Валидируем идею", "Изучаем рынок", "Формируем отчёт"];
-const STEP_MS = 1000;
+/** Демо-профиль под размытием — намёк на готовый отчёт. */
+const TEASER_RADAR = [0.72, 0.22, 0.45, 0.55, 0.78, 0.28];
 
 export function IdeaDetailPending({
 	idea,
 	onAnalyzed,
 }: IdeaDetailPendingProps) {
 	const price = PRICES.analysis;
+	const { balance, analyzeIdea, openWallet } = useIdeasDemo();
 	const [loading, setLoading] = useState(false);
+	const [charging, setCharging] = useState(false);
 	const [step, setStep] = useState(0);
+
+	const insufficient = balance < price;
+	const busy = loading || charging;
 
 	useEffect(() => {
 		if (!loading) return;
-		if (step >= STEPS.length - 1) {
-			const done = window.setTimeout(onAnalyzed, STEP_MS);
+		if (step >= ANALYSIS_STEPS.length - 1) {
+			const done = window.setTimeout(onAnalyzed, ANALYSIS_STEP_MS);
 			return () => window.clearTimeout(done);
 		}
-		const next = window.setTimeout(() => setStep((s) => s + 1), STEP_MS);
+		const next = window.setTimeout(() => setStep((s) => s + 1), ANALYSIS_STEP_MS);
 		return () => window.clearTimeout(next);
 	}, [loading, step, onAnalyzed]);
 
-	function handleAnalyze() {
+	async function handleAnalyze() {
+		if (busy) return;
+		setCharging(true);
+		const result = await analyzeIdea(idea.id);
+		setCharging(false);
+		if (result === "insufficient") {
+			openWallet();
+			return;
+		}
+		if (result !== "ok") return;
 		setStep(0);
 		setLoading(true);
 	}
 
-	return (
-		<div className="rounded-2xl border border-stone-800/60 bg-linear-to-b from-stone-900/60 to-stone-950/40 p-6 sm:p-8">
-			<div className="mx-auto max-w-md text-center">
-				<div className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-amber-500/10 ring-1 ring-amber-500/20">
-					<Sparkles className="size-7 text-amber-400" />
-				</div>
-				<h2 className="mt-4 text-lg font-semibold text-stone-100">
-					{loading ? "Анализируем идею" : "Анализ ещё не запускался"}
-				</h2>
+	if (loading) {
+		return <RunningOverlay step={step} title={idea.title} />;
+	}
 
-				{loading ? (
-					<ul className="mx-auto mt-5 flex max-w-sm flex-col items-center gap-2">
-						{STEPS.map((label, i) => {
-							const state =
-								i < step
-									? "done"
-									: i === step
-										? "active"
-										: "idle";
-							return (
-								<li
-									key={label}
-									className={`flex items-center justify-center gap-2.5 text-center text-sm transition ${
-										state === "idle"
-											? "text-stone-600"
-											: state === "active"
-												? "text-stone-200"
-												: "text-stone-400"
-									}`}
-								>
-									{state === "done" ? (
-										<span className="flex size-4 shrink-0 items-center justify-center rounded-full bg-emerald-500/20 ring-1 ring-emerald-500/30">
-											<motion.span
-												className="size-1.5 rounded-full bg-emerald-400"
-												initial={{ scale: 0 }}
-												animate={{ scale: [1, 1.3, 1] }}
-												transition={{
-													duration: 1.8,
-													repeat: Infinity,
-													ease: "easeInOut",
-												}}
-											/>
-										</span>
-									) : state === "active" ? (
-										<Loader2 className="size-4 shrink-0 animate-spin text-amber-400" />
-									) : (
-										<span className="size-4 shrink-0 rounded-full border border-stone-700" />
-									)}
-									{label}
-								</li>
-							);
-						})}
-					</ul>
-				) : (
-					<>
-						<p className="mt-2 text-sm leading-relaxed text-stone-500">
-							Система оценит «{idea.title}» и даст свою оценку.
-						</p>
-						<button
-							type="button"
-							onClick={handleAnalyze}
-							className="mt-6 inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-amber-500 px-5 py-3 text-sm font-semibold text-stone-950 transition hover:bg-amber-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/40 sm:w-auto"
-						>
-							Запустить анализ · {price} ₽
-						</button>
-					</>
-				)}
+	return (
+		<div
+			className={`relative overflow-hidden ${PANEL} min-h-88 sm:min-h-76`}
+		>
+			<div
+				aria-hidden
+				className="pointer-events-none absolute inset-0 select-none blur-[6px]"
+			>
+				<div className="flex h-full flex-col justify-center gap-6 p-6 sm:flex-row sm:items-center sm:px-8">
+					<div className="flex flex-1 items-center gap-4">
+						<ScoreRing
+							score={73}
+							size="lg"
+							ringClassName="stroke-amber-400"
+							textClassName="text-amber-400"
+						/>
+						<div className="space-y-2">
+							<div className="h-3 w-40 rounded bg-stone-700/70" />
+							<div className="h-3 w-28 rounded bg-stone-800" />
+							<div className="hidden h-3 w-52 rounded bg-stone-800/80 sm:block" />
+						</div>
+					</div>
+					<div className="mx-auto h-40 w-full max-w-56 shrink-0 sm:mx-0 sm:h-44">
+						<RadarChart
+							values={TEASER_RADAR}
+							labels={RICH_RADAR_LABELS}
+							className="h-full w-full"
+						/>
+					</div>
+				</div>
+				<div className="absolute inset-x-0 bottom-0 space-y-2 px-6 pb-6 sm:px-8">
+					<div className="h-3 w-full rounded bg-stone-800" />
+					<div className="h-3 w-4/5 rounded bg-stone-800" />
+				</div>
+			</div>
+
+			<div
+				aria-hidden
+				className="absolute inset-0 z-1 bg-stone-950/55 backdrop-blur-[2px]"
+			/>
+
+			<div className="relative z-10 flex min-h-88 items-center justify-center px-4 py-10 sm:min-h-76 sm:py-8">
+				<div className="w-full max-w-sm rounded-2xl border border-stone-700/60 bg-stone-900/80 p-6 text-center shadow-2xl shadow-black/40">
+					<div className="mx-auto flex size-11 items-center justify-center rounded-xl bg-amber-500/10 ring-1 ring-amber-500/20">
+						<Lock className="size-5 text-amber-400" />
+					</div>
+					<h2 className="mt-3.5 text-pretty text-base font-semibold leading-snug text-stone-100">
+						Хотите провести анализ выбранной идеи?
+					</h2>
+					<p className="mt-1.5 text-sm text-stone-500">
+						Анализ идеи займет меньше минуты
+					</p>
+					<button
+						type="button"
+						onClick={insufficient ? openWallet : handleAnalyze}
+						disabled={charging}
+						className="mt-5 inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-amber-500 px-5 py-3 text-sm font-semibold text-stone-950 transition hover:bg-amber-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/40 disabled:cursor-not-allowed disabled:opacity-70"
+					>
+						{charging ? (
+							<>
+								<Loader2 className="size-4 animate-spin" />
+								Запускаем…
+							</>
+						) : insufficient ? (
+							<>
+								<Wallet className="size-4" />
+								Пополнить баланс
+							</>
+						) : (
+							<>Запустить анализ · {price} ₽</>
+						)}
+					</button>
+				</div>
 			</div>
 		</div>
 	);

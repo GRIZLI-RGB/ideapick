@@ -1,12 +1,10 @@
 "use client";
 
-import { IdeaAnalysisReport } from "@/components/ideas/detail/idea-analysis-report";
 import { IdeaDetailHeader } from "@/components/ideas/detail/idea-detail-header";
 import { IdeaDetailPending } from "@/components/ideas/detail/idea-detail-pending";
 import { IdeaDetailBackLink } from "@/components/ideas/detail/idea-detail-back-nav";
 import { RichAnalysisReport } from "@/components/ideas/detail/rich/rich-analysis-report";
 import { useIdeasDemo } from "@/components/ideas/ideas-demo-provider";
-import { getMockAnalysisReport } from "@/lib/analysis/mock-reports";
 import { buildRichMockReport } from "@/lib/analysis/rich-mock";
 import type { RichAnalysisReport as RichReport } from "@/lib/analysis/rich-types";
 import { motion } from "framer-motion";
@@ -19,15 +17,21 @@ type IdeaDetailClientProps = {
 
 export function IdeaDetailClient({ id }: IdeaDetailClientProps) {
 	const router = useRouter();
-	const { ideas, deleteIdea, setIdeaArchived } = useIdeasDemo();
+	const { ideas, deleteIdea, setIdeaArchived, analyzeIdea, markIdeaAnalyzed, openWallet } =
+		useIdeasDemo();
 	const [deleting, setDeleting] = useState(false);
+	/** Отчёт текущей сессии (обновления версии); при reload берётся из buildRichMockReport. */
 	const [generated, setGenerated] = useState<RichReport | null>(null);
 
 	const idea = ideas.find((i) => i.id === id);
-	const report = useMemo(
-		() => (idea ? getMockAnalysisReport(idea) : null),
-		[idea],
-	);
+	const report = useMemo(() => {
+		if (!idea) return null;
+		if (generated) return generated;
+		if (idea.hasAnalysis && idea.score != null) {
+			return buildRichMockReport(idea);
+		}
+		return null;
+	}, [idea, generated]);
 
 	if (!idea) {
 		// Во время удаления идея уже убрана из состояния — не мигаем «не найдено»,
@@ -41,7 +45,7 @@ export function IdeaDetailClient({ id }: IdeaDetailClientProps) {
 		);
 	}
 
-	const hasAnalysis = Boolean(report) || Boolean(generated);
+	const hasAnalysis = Boolean(report);
 
 	return (
 		<motion.div
@@ -64,24 +68,30 @@ export function IdeaDetailClient({ id }: IdeaDetailClientProps) {
 					router.push("/app/ideas");
 					await deleteIdea(idea.id);
 				}}
-				onUpdateAnalysis={() => {
-					if (!generated) return;
-					const next = generated.version + 1;
+				onUpdateAnalysis={async () => {
+					if (!hasAnalysis) return;
+					const result = await analyzeIdea(idea.id, "update");
+					if (result === "insufficient") {
+						openWallet();
+						return;
+					}
+					if (result !== "ok") return;
+					const next = (report?.version ?? 1) + 1;
 					setGenerated(buildRichMockReport(idea, next));
 				}}
 			/>
 
 			<div className="mt-5">
-				{generated ? (
-					<RichAnalysisReport report={generated} />
-				) : report ? (
-					<IdeaAnalysisReport report={report} />
+				{report ? (
+					<RichAnalysisReport report={report} />
 				) : (
 					<IdeaDetailPending
 						idea={idea}
-						onAnalyzed={() =>
-							setGenerated(buildRichMockReport(idea))
-						}
+						onAnalyzed={() => {
+							const fresh = buildRichMockReport(idea);
+							setGenerated(fresh);
+							markIdeaAnalyzed(idea.id, fresh.score);
+						}}
 					/>
 				)}
 			</div>
