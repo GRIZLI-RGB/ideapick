@@ -100,46 +100,6 @@ const RICH_REPORTS: Record<string, Omit<RichAnalysisReport, "analyzedAt" | "vers
 			"Проверить готовность платить через продажу 10 шаблонов до написания платформы",
 			"Если спрос есть — добавить ИИ-кастомизацию под бренд как отличие от голого конструктора",
 		],
-		evidence: {
-			competitors: [
-				{
-					name: "Framer AI",
-					note: "Генерация сайта по описанию + хостинг",
-					url: "https://www.framer.com/features/ai/",
-				},
-				{
-					name: "Tilda",
-					note: "RU-лидер конструкторов, добавил AI-генерацию блоков",
-					url: "https://tilda.cc/ru/",
-				},
-				{
-					name: "Durable",
-					note: "AI-сайт за 30 секунд, агрессивный маркетинг",
-					url: "https://durable.co/",
-				},
-				{
-					name: "v0 by Vercel",
-					note: "Генерация UI/страниц по промпту, бесплатный тариф",
-					url: "https://v0.dev/",
-				},
-			],
-			demandSignals: [
-				{
-					claim: "«конструктор лендингов» — десятки тысяч запросов в месяц (РФ)",
-					source: "Яндекс Wordstat",
-					url: "https://wordstat.yandex.ru/",
-				},
-				{
-					claim: "Категория AI website builder — устойчивый рост интереса",
-					source: "Google Trends",
-					url: "https://trends.google.com/",
-				},
-			],
-			gaps: [
-				"Нет данных о реальной конверсии в платных шаблонах у текущих игроков",
-				"Не проверена готовность RU-аудитории платить за шаблон, а не за конструктор",
-			],
-		},
 	},
 
 	// Email-дайджест индустрии за 60 секунд — «упростить и проверить»
@@ -234,40 +194,6 @@ const RICH_REPORTS: Record<string, Omit<RichAnalysisReport, "analyzedAt" | "vers
 			"Собрать 100 подписчиков и измерить open rate / отписки",
 			"Автоматизировать сбор и саммари только после доказанного удержания",
 		],
-		evidence: {
-			competitors: [
-				{
-					name: "TLDR",
-					note: "Крупнейший tech-дайджест, эталон формата",
-					url: "https://tldr.tech/",
-				},
-				{
-					name: "Bytes",
-					note: "JS-дайджест с высоким engagement за счёт тона",
-					url: "https://bytes.dev/",
-				},
-				{
-					name: "Substack",
-					note: "Платформа рассылок — и канал, и конкуренция",
-					url: "https://substack.com/",
-				},
-			],
-			demandSignals: [
-				{
-					claim: "Формат коротких дайджестов показывает высокий open rate в tech",
-					source: "Публичные отчёты TLDR/Bytes",
-				},
-				{
-					claim: "Спрос на «дайджест новостей» стабилен в поиске (РФ)",
-					source: "Яндекс Wordstat",
-					url: "https://wordstat.yandex.ru/",
-				},
-			],
-			gaps: [
-				"Нет данных о готовности RU-аудитории платить за нишевый дайджест",
-				"Не проверена долгосрочная удерживаемость на конкретной нише",
-			],
-		},
 	},
 };
 
@@ -389,13 +315,5 @@ function fallbackReport(idea: Idea, version: number): RichAnalysisReport {
 			"Проверить спрос лендингом до начала разработки",
 			"Провести 5 интервью с потенциальными пользователями",
 		],
-		evidence: {
-			competitors: [],
-			demandSignals: [],
-			gaps: [
-				"Описание идеи слишком короткое для точной оценки спроса и конкуренции",
-				"Не указаны аудитория и модель монетизации",
-			],
-		},
 	};
 }

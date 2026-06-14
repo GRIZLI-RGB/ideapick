@@ -51,9 +51,6 @@ export type KillerAssumption = {
 	test: AssumptionTest;
 };
 
-export type Competitor = { name: string; note: string; url?: string };
-export type DemandSignal = { claim: string; source: string; url?: string };
-
 export type RichAnalysisReport = {
 	score: number;
 	confidence: Confidence;
@@ -69,11 +66,6 @@ export type RichAnalysisReport = {
 	axes: Record<RichAxisKey, RichAxis>;
 	killerAssumption: KillerAssumption;
 	nextSteps: string[];
-	evidence: {
-		competitors: Competitor[];
-		demandSignals: DemandSignal[];
-		gaps: string[];
-	};
 };
 
 export const VERDICT_META: Record<

@@ -1,6 +1,7 @@
-import { getDashboardStats } from "@/lib/admin/service";
-import { formatRub } from "@/lib/admin/format";
+import { getDashboardStats, getLlmStats } from "@/lib/admin/service";
+import { formatRub, formatUsd } from "@/lib/admin/format";
 import {
+	Bot,
 	Headphones,
 	LayoutDashboard,
 	Lightbulb,
@@ -50,7 +51,10 @@ function StatCard({
 }
 
 export default async function AdminDashboardPage() {
-	const stats = await getDashboardStats();
+	const [stats, llm] = await Promise.all([
+		getDashboardStats(),
+		getLlmStats(),
+	]);
 
 	return (
 		<div className="space-y-6">
@@ -92,6 +96,13 @@ export default async function AdminDashboardPage() {
 					hint="Статусы «открыт» и «в работе»"
 					icon={Headphones}
 					href="/admin/support"
+				/>
+				<StatCard
+					label="Запросы к нейросети"
+					value={String(llm.requestsTotal)}
+					hint={`Расходы: ${formatUsd(llm.costMicroUsdTotal)}`}
+					icon={Bot}
+					href="/admin/llm"
 				/>
 			</div>
 		</div>

@@ -2,15 +2,14 @@
 
 import { IdeaDetailAnalyzing } from "@/components/ideas/detail/idea-detail-analyzing";
 import { IdeaDetailHeader } from "@/components/ideas/detail/idea-detail-header";
+import { IdeaDetailFailed } from "@/components/ideas/detail/idea-detail-failed";
 import { IdeaDetailPending } from "@/components/ideas/detail/idea-detail-pending";
 import { IdeaDetailBackLink } from "@/components/ideas/detail/idea-detail-back-nav";
 import { RichAnalysisReport } from "@/components/ideas/detail/rich/rich-analysis-report";
 import { useIdeasDemo } from "@/components/ideas/ideas-demo-provider";
-import { buildRichMockReport } from "@/lib/analysis/rich-mock";
-import type { RichAnalysisReport as RichReport } from "@/lib/analysis/rich-types";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 
 type IdeaDetailClientProps = {
 	id: string;
@@ -18,37 +17,49 @@ type IdeaDetailClientProps = {
 
 export function IdeaDetailClient({ id }: IdeaDetailClientProps) {
 	const router = useRouter();
-	const { ideas, deleteIdea, setIdeaArchived, analyzeIdea, markIdeaAnalyzed, openWallet } =
+	const { ideas, deleteIdea, setIdeaArchived, analyzeIdea, openWallet } =
 		useIdeasDemo();
 	const [deleting, setDeleting] = useState(false);
-	/** Отчёт текущей сессии (обновления версии); при reload берётся из buildRichMockReport. */
-	const [generated, setGenerated] = useState<RichReport | null>(null);
-	/** Повторный анализ: после списания показываем те же шаги, что при первом запуске. */
-	const [refreshing, setRefreshing] = useState(false);
-	const [refreshFromVersion, setRefreshFromVersion] = useState(1);
+	/** Идёт запуск анализа (списание + генерация на сервере). */
+	const [analyzing, setAnalyzing] = useState(false);
+	/** Анимация прогресса доиграла до конца. */
+	const animationDoneRef = useRef(false);
+	/** Отчёт пришёл с сервера. */
+	const reportReadyRef = useRef(false);
 
 	const idea = ideas.find((i) => i.id === id);
-	const report = useMemo(() => {
-		if (!idea) return null;
-		if (generated) return generated;
-		if (idea.hasAnalysis && idea.score != null) {
-			return buildRichMockReport(idea);
+	const report = idea?.report ?? null;
+
+	// Снимаем оверлей только когда и анимация доиграла, и отчёт готов.
+	const finishIfReady = useCallback(() => {
+		if (animationDoneRef.current && reportReadyRef.current) {
+			setAnalyzing(false);
 		}
-		return null;
-	}, [idea, generated]);
+	}, []);
 
-	const completeRefresh = useCallback(() => {
-		if (!idea) return;
-		setGenerated(buildRichMockReport(idea, refreshFromVersion + 1));
-		setRefreshing(false);
-	}, [idea, refreshFromVersion]);
+	const startAnalysis = useCallback(
+		async (mode: "initial" | "update") => {
+			if (analyzing) return;
+			animationDoneRef.current = false;
+			reportReadyRef.current = false;
+			setAnalyzing(true);
 
-	const handleFirstAnalyzed = useCallback(() => {
-		if (!idea) return;
-		const fresh = buildRichMockReport(idea);
-		setGenerated(fresh);
-		markIdeaAnalyzed(idea.id, fresh.score);
-	}, [idea, markIdeaAnalyzed]);
+			const result = await analyzeIdea(id, mode);
+			if (result === "insufficient") {
+				setAnalyzing(false);
+				openWallet();
+				return;
+			}
+			if (result === "error") {
+				setAnalyzing(false);
+				return;
+			}
+			// Успех: отчёт уже в состоянии идеи — дожидаемся конца анимации.
+			reportReadyRef.current = true;
+			finishIfReady();
+		},
+		[analyzing, analyzeIdea, id, openWallet, finishIfReady],
+	);
 
 	if (!idea) {
 		// Во время удаления идея уже убрана из состояния — не мигаем «не найдено»,
@@ -85,32 +96,29 @@ export function IdeaDetailClient({ id }: IdeaDetailClientProps) {
 					router.push("/app/ideas");
 					await deleteIdea(idea.id);
 				}}
-				onUpdateAnalysis={async () => {
-					if (!hasAnalysis || refreshing) return;
-					const result = await analyzeIdea(idea.id, "update");
-					if (result === "insufficient") {
-						openWallet();
-						return;
-					}
-					if (result !== "ok") return;
-					setRefreshFromVersion(report?.version ?? 1);
-					setRefreshing(true);
+				onUpdateAnalysis={() => {
+					if (!hasAnalysis || analyzing) return;
+					void startAnalysis("update");
 				}}
 			/>
 
 			<div className="mt-5">
-				{refreshing ? (
+				{analyzing ? (
 					<IdeaDetailAnalyzing
-						key={`refresh-${refreshFromVersion}`}
+						key={`analyze-${report?.version ?? 0}`}
 						title={idea.title}
-						onComplete={completeRefresh}
+						onComplete={() => {
+							animationDoneRef.current = true;
+							finishIfReady();
+						}}
 					/>
 				) : report ? (
 					<RichAnalysisReport report={report} />
+				) : idea.analysisStatus === "failed" ? (
+					<IdeaDetailFailed onRetry={() => void startAnalysis("initial")} />
 				) : (
 					<IdeaDetailPending
-						idea={idea}
-						onAnalyzed={handleFirstAnalyzed}
+						onAnalyze={() => void startAnalysis("initial")}
 					/>
 				)}
 			</div>

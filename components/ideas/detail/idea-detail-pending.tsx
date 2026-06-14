@@ -1,55 +1,26 @@
 "use client";
 
-import { IdeaDetailAnalyzing } from "@/components/ideas/detail/idea-detail-analyzing";
 import { PANEL } from "@/components/ideas/detail/idea-detail-shared";
 import { RadarChart } from "@/components/ideas/detail/visual/radar-chart";
 import { useIdeasDemo } from "@/components/ideas/ideas-demo-provider";
 import { ScoreRing } from "@/components/ideas/score-ring";
 import { RICH_RADAR_LABELS } from "@/lib/analysis/rich-types";
 import { PRICES } from "@/lib/ideas/constants";
-import type { Idea } from "@/lib/ideas/types";
-import { Loader2, Lock, Wallet } from "lucide-react";
-import { useState } from "react";
+import { Lock, Wallet } from "lucide-react";
 
 type IdeaDetailPendingProps = {
-	idea: Idea;
-	/** Вызывается после списания и «генерации» — отдаёт готовность отрисовать отчёт. */
-	onAnalyzed: () => void;
+	/** Запускает анализ (списание + генерация управляются родителем). */
+	onAnalyze: () => void;
 };
 
 /** Демо-профиль под размытием — намёк на готовый отчёт. */
 const TEASER_RADAR = [0.72, 0.22, 0.45, 0.55, 0.78, 0.28];
 
-export function IdeaDetailPending({
-	idea,
-	onAnalyzed,
-}: IdeaDetailPendingProps) {
+export function IdeaDetailPending({ onAnalyze }: IdeaDetailPendingProps) {
 	const price = PRICES.analysis;
-	const { balance, analyzeIdea, openWallet } = useIdeasDemo();
-	const [loading, setLoading] = useState(false);
-	const [charging, setCharging] = useState(false);
+	const { balance, openWallet } = useIdeasDemo();
 
 	const insufficient = balance < price;
-	const busy = loading || charging;
-
-	async function handleAnalyze() {
-		if (busy) return;
-		setCharging(true);
-		const result = await analyzeIdea(idea.id);
-		setCharging(false);
-		if (result === "insufficient") {
-			openWallet();
-			return;
-		}
-		if (result !== "ok") return;
-		setLoading(true);
-	}
-
-	if (loading) {
-		return (
-			<IdeaDetailAnalyzing title={idea.title} onComplete={onAnalyzed} />
-		);
-	}
 
 	return (
 		<div
@@ -105,16 +76,10 @@ export function IdeaDetailPending({
 					</p>
 					<button
 						type="button"
-						onClick={insufficient ? openWallet : handleAnalyze}
-						disabled={charging}
-						className="mt-5 inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-amber-500 px-5 py-3 text-sm font-semibold text-stone-950 transition hover:bg-amber-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/40 disabled:cursor-not-allowed disabled:opacity-70"
+						onClick={insufficient ? openWallet : onAnalyze}
+						className="mt-5 inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-amber-500 px-5 py-3 text-sm font-semibold text-stone-950 transition hover:bg-amber-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/40"
 					>
-						{charging ? (
-							<>
-								<Loader2 className="size-4 animate-spin" />
-								Запускаем…
-							</>
-						) : insufficient ? (
+						{insufficient ? (
 							<>
 								<Wallet className="size-4" />
 								Пополнить баланс

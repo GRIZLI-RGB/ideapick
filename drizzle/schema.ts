@@ -2,10 +2,12 @@ import {
 	boolean,
 	index,
 	integer,
+	jsonb,
 	pgTable,
 	text,
 	timestamp,
 } from "drizzle-orm/pg-core";
+import type { RichAnalysisReport } from "@/lib/analysis/rich-types";
 
 export const user = pgTable("user", {
 	id: text("id").primaryKey(),
@@ -75,6 +77,10 @@ export const idea = pgTable(
 		// 0–100; null — анализ ещё не проводился.
 		score: integer("score"),
 		hasAnalysis: boolean("has_analysis").notNull().default(false),
+		// Полный отчёт последнего анализа (RichAnalysisReport). null — отчёта нет.
+		analysisReport: jsonb("analysis_report").$type<RichAnalysisReport>(),
+		// null | pending | ok | failed — статус последнего запуска анализа.
+		analysisStatus: text("analysis_status"),
 		// manual | catalog | anamnesis — источник появления идеи.
 		source: text("source").notNull().default("manual"),
 		// null — активная; дата — когда перенесена в архив (скрыта из списка).
@@ -220,4 +226,69 @@ export const supportMessage = pgTable(
 	(table) => [
 		index("support_message_ticket_idx").on(table.ticketId, table.createdAt),
 	],
+);
+
+/**
+ * Настраиваемый промпт для обращения к нейросети. Редактируется из админ-панели
+ * (/admin/prompts). `key` — стабильный слаг назначения (напр. `idea-analysis`),
+ * активный шаблон по этому ключу используется при генерации.
+ */
+export const promptTemplate = pgTable(
+	"prompt_template",
+	{
+		id: text("id").primaryKey(),
+		// Назначение шаблона, напр. idea-analysis.
+		key: text("key").notNull(),
+		name: text("name").notNull(),
+		// ID модели DeepSeek (deepseek-v4-pro | deepseek-v4-flash).
+		model: text("model").notNull().default("deepseek-v4-pro"),
+		// Режим рассуждений модели.
+		thinking: boolean("thinking").notNull().default(true),
+		// Температура ×100 (целое): 30 → 0.3.
+		temperature: integer("temperature").notNull().default(40),
+		maxTokens: integer("max_tokens").notNull().default(8000),
+		systemPrompt: text("system_prompt").notNull(),
+		// Шаблон пользовательского сообщения с плейсхолдерами {{title}}/{{description}}.
+		userPromptTemplate: text("user_prompt_template").notNull(),
+		isActive: boolean("is_active").notNull().default(true),
+		createdAt: timestamp("created_at").notNull().defaultNow(),
+		updatedAt: timestamp("updated_at").notNull().defaultNow(),
+	},
+	(table) => [index("prompt_template_key_idx").on(table.key, table.isActive)],
+);
+
+/**
+ * Журнал обращений к нейросети. Пишется на каждый запрос анализа (успех и
+ * ошибка). Хранит промпт, ответ, токены и расчётную стоимость для админ-панели.
+ *
+ * `costMicroUsd` — стоимость в микро-долларах (1e-6 USD), целое.
+ */
+export const llmRequest = pgTable(
+	"llm_request",
+	{
+		id: text("id").primaryKey(),
+		userId: text("user_id").references(() => user.id, {
+			onDelete: "set null",
+		}),
+		ideaId: text("idea_id").references(() => idea.id, {
+			onDelete: "set null",
+		}),
+		// Ключ использованного шаблона промпта.
+		templateKey: text("template_key"),
+		model: text("model").notNull(),
+		// ok | error
+		status: text("status").notNull(),
+		systemPrompt: text("system_prompt").notNull().default(""),
+		userPrompt: text("user_prompt").notNull().default(""),
+		responseContent: text("response_content").notNull().default(""),
+		promptTokens: integer("prompt_tokens").notNull().default(0),
+		completionTokens: integer("completion_tokens").notNull().default(0),
+		totalTokens: integer("total_tokens").notNull().default(0),
+		cachedTokens: integer("cached_tokens").notNull().default(0),
+		costMicroUsd: integer("cost_micro_usd").notNull().default(0),
+		latencyMs: integer("latency_ms").notNull().default(0),
+		errorText: text("error_text"),
+		createdAt: timestamp("created_at").notNull().defaultNow(),
+	},
+	(table) => [index("llm_request_created_idx").on(table.createdAt)],
 );

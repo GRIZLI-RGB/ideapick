@@ -2,10 +2,12 @@
 
 import {
 	BookOpen,
+	Bot,
 	Headphones,
 	LayoutDashboard,
 	Lightbulb,
 	Receipt,
+	ScrollText,
 	Users,
 } from "lucide-react";
 import Link from "next/link";
@@ -17,6 +19,8 @@ const ITEMS = [
 	{ href: "/admin/payments", label: "Платежи", Icon: Receipt, exact: false },
 	{ href: "/admin/ideas", label: "Идеи", Icon: Lightbulb, exact: false },
 	{ href: "/admin/catalog", label: "Каталог", Icon: BookOpen, exact: false },
+	{ href: "/admin/llm", label: "Нейросеть", Icon: Bot, exact: false },
+	{ href: "/admin/prompts", label: "Промпты", Icon: ScrollText, exact: false },
 	{
 		href: "/admin/support",
 		label: "Поддержка",

@@ -28,14 +28,7 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
-import {
-	Calendar,
-	ChevronDown,
-	ExternalLink,
-	History,
-	Sparkles,
-	TrendingUp,
-} from "lucide-react";
+import { Calendar, ChevronDown, History, Sparkles } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useState } from "react";
 
@@ -235,9 +228,6 @@ function AxisRow({
 	const meta = AXIS_META[axisKey];
 	const Icon = meta.icon;
 	const tone = toneFromLevel(axis.score);
-	const competitors =
-		axisKey === "competition" ? report.evidence.competitors : [];
-	const signals = axisKey === "demand" ? report.evidence.demandSignals : [];
 
 	return (
 		<div className="rounded-xl">
@@ -285,7 +275,7 @@ function AxisRow({
 							{axis.audience ? (
 								<p className="mb-2.5 text-xs leading-relaxed text-stone-400">
 									<span className="text-stone-500">Аудитория: </span>
-									{axis.audience}
+									{axis.audience.toLocaleLowerCase()}
 								</p>
 							) : null}
 
@@ -300,92 +290,10 @@ function AxisRow({
 									</li>
 								))}
 							</ul>
-
-							{signals.length > 0 ? (
-								<Evidence title="Сигналы спроса" icon={TrendingUp}>
-									{signals.map((sig, i) => (
-										<li
-											key={i}
-											className="text-xs leading-relaxed text-stone-400"
-										>
-											{sig.url ? (
-												<a
-													href={sig.url}
-													target="_blank"
-													rel="noopener noreferrer"
-													className="inline-flex items-center gap-1 text-stone-300 underline decoration-stone-700 underline-offset-2 transition hover:text-amber-300 hover:decoration-amber-500/50"
-												>
-													{sig.source}
-													<ExternalLink className="size-3" />
-												</a>
-											) : (
-												<span className="text-stone-300">
-													{sig.source}
-												</span>
-											)}
-											<span className="text-stone-500"> — {sig.claim}</span>
-										</li>
-									))}
-								</Evidence>
-							) : null}
-
-							{competitors.length > 0 ? (
-								<Evidence title="Кто уже на рынке">
-									<div className="flex flex-wrap gap-1.5">
-										{competitors.map((c) =>
-											c.url ? (
-												<a
-													key={c.name}
-													href={c.url}
-													target="_blank"
-													rel="noopener noreferrer"
-													title={c.note}
-													className="inline-flex items-center gap-1 rounded-lg border border-stone-700/70 bg-stone-800/50 px-2 py-1 text-xs text-stone-300 transition hover:border-amber-500/40 hover:text-amber-200"
-												>
-													{c.name}
-													<ExternalLink className="size-3 opacity-60" />
-												</a>
-											) : (
-												<span
-													key={c.name}
-													title={c.note}
-													className="inline-flex rounded-lg border border-stone-700/70 bg-stone-800/50 px-2 py-1 text-xs text-stone-300"
-												>
-													{c.name}
-												</span>
-											),
-										)}
-									</div>
-								</Evidence>
-							) : null}
 						</div>
 					</motion.div>
 				) : null}
 			</AnimatePresence>
-		</div>
-	);
-}
-
-function Evidence({
-	title,
-	icon: Icon,
-	children,
-}: {
-	title: string;
-	icon?: typeof TrendingUp;
-	children: React.ReactNode;
-}) {
-	return (
-		<div className="mt-3.5 border-t border-stone-800/60 pt-3">
-			<p className="mb-2 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-stone-500">
-				{Icon ? <Icon className="size-3" /> : null}
-				{title}
-			</p>
-			{Array.isArray(children) ? (
-				<ul className="space-y-1.5">{children}</ul>
-			) : (
-				children
-			)}
 		</div>
 	);
 }

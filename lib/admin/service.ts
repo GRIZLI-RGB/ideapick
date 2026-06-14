@@ -5,6 +5,7 @@ import { and, count, desc, eq, gte, ilike, or, sum } from "drizzle-orm";
 import { db } from "@/drizzle";
 import {
 	idea,
+	llmRequest,
 	payment,
 	supportTicket,
 	user,
@@ -391,5 +392,133 @@ export async function listAllIdeas({
 			createdAt: i.createdAt.toISOString(),
 		})),
 		total: totalRow.value,
+	};
+}
+
+// ---------------------------------------------------------------------------
+// Журнал обращений к нейросети
+// ---------------------------------------------------------------------------
+
+export type AdminLlmRow = {
+	id: string;
+	userId: string | null;
+	userEmail: string | null;
+	model: string;
+	status: string;
+	totalTokens: number;
+	costMicroUsd: number;
+	latencyMs: number;
+	createdAt: string;
+};
+
+export async function listLlmRequests({
+	status,
+	page,
+}: {
+	status?: string;
+	page: number;
+}): Promise<{ requests: AdminLlmRow[]; total: number }> {
+	const where = status ? eq(llmRequest.status, status) : undefined;
+
+	const [rows, [totalRow]] = await Promise.all([
+		db
+			.select({ req: llmRequest, userEmail: user.email })
+			.from(llmRequest)
+			.leftJoin(user, eq(llmRequest.userId, user.id))
+			.where(where)
+			.orderBy(desc(llmRequest.createdAt))
+			.limit(ADMIN_PAGE_SIZE)
+			.offset((page - 1) * ADMIN_PAGE_SIZE),
+		db.select({ value: count() }).from(llmRequest).where(where),
+	]);
+
+	return {
+		requests: rows.map(({ req, userEmail }) => ({
+			id: req.id,
+			userId: req.userId,
+			userEmail,
+			model: req.model,
+			status: req.status,
+			totalTokens: req.totalTokens,
+			costMicroUsd: req.costMicroUsd,
+			latencyMs: req.latencyMs,
+			createdAt: req.createdAt.toISOString(),
+		})),
+		total: totalRow.value,
+	};
+}
+
+export type AdminLlmDetail = {
+	id: string;
+	userId: string | null;
+	userEmail: string | null;
+	ideaId: string | null;
+	templateKey: string | null;
+	model: string;
+	status: string;
+	systemPrompt: string;
+	userPrompt: string;
+	responseContent: string;
+	promptTokens: number;
+	completionTokens: number;
+	totalTokens: number;
+	cachedTokens: number;
+	costMicroUsd: number;
+	latencyMs: number;
+	errorText: string | null;
+	createdAt: string;
+};
+
+export async function getLlmRequestDetail(
+	id: string,
+): Promise<AdminLlmDetail | null> {
+	const [row] = await db
+		.select({ req: llmRequest, userEmail: user.email })
+		.from(llmRequest)
+		.leftJoin(user, eq(llmRequest.userId, user.id))
+		.where(eq(llmRequest.id, id))
+		.limit(1);
+
+	if (!row) return null;
+
+	const { req, userEmail } = row;
+	return {
+		id: req.id,
+		userId: req.userId,
+		userEmail,
+		ideaId: req.ideaId,
+		templateKey: req.templateKey,
+		model: req.model,
+		status: req.status,
+		systemPrompt: req.systemPrompt,
+		userPrompt: req.userPrompt,
+		responseContent: req.responseContent,
+		promptTokens: req.promptTokens,
+		completionTokens: req.completionTokens,
+		totalTokens: req.totalTokens,
+		cachedTokens: req.cachedTokens,
+		costMicroUsd: req.costMicroUsd,
+		latencyMs: req.latencyMs,
+		errorText: req.errorText,
+		createdAt: req.createdAt.toISOString(),
+	};
+}
+
+export type LlmStats = {
+	requestsTotal: number;
+	costMicroUsdTotal: number;
+};
+
+export async function getLlmStats(): Promise<LlmStats> {
+	const [row] = await db
+		.select({
+			requestsTotal: count(),
+			costMicroUsdTotal: sum(llmRequest.costMicroUsd),
+		})
+		.from(llmRequest);
+
+	return {
+		requestsTotal: row?.requestsTotal ?? 0,
+		costMicroUsdTotal: Number(row?.costMicroUsdTotal ?? 0),
 	};
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import type { RichAnalysisReport } from "@/lib/analysis/rich-types";
 import { PRICES } from "@/lib/ideas/constants";
 import { ANAMNESIS_RESULT_POOL } from "@/lib/ideas/mock-data";
 import type {
@@ -63,8 +64,6 @@ type IdeasDemoContextValue = {
 		id: string,
 		mode?: "initial" | "update",
 	) => Promise<"ok" | "insufficient" | "error">;
-	/** Локально помечает идею проанализированной (после показа отчёта). */
-	markIdeaAnalyzed: (id: string, score: number) => void;
 	addCatalogIdea: () => Promise<boolean>;
 	addAnamnesisIdeas: () => Promise<boolean>;
 	filteredIdeas: Idea[];
@@ -351,9 +350,10 @@ export function IdeasDemoProvider({
 	);
 
 	/**
-	 * Запускает анализ идеи с реальным списанием стоимости на сервере. При
-	 * успехе синхронизирует баланс и историю операций; нехватку средств отдаёт
-	 * вызывающему, чтобы тот открыл кошелёк.
+	 * Запускает анализ идеи: списывает стоимость и генерирует отчёт нейросетью
+	 * на сервере. При успехе синхронизирует баланс, историю операций и сам отчёт
+	 * в состоянии идеи. При сбое генерации деньги уже списаны (возврат вручную) —
+	 * идея помечается как «failed».
 	 */
 	const analyzeIdea = useCallback(
 		async (
@@ -368,23 +368,58 @@ export function IdeasDemoProvider({
 					headers: { "Content-Type": "application/json" },
 					body: JSON.stringify({ mode }),
 				});
-				if (!res.ok) {
-					if (res.status === 402) return "insufficient";
-					const data = (await res.json().catch(() => ({}))) as {
-						error?: string;
-					};
+				const data = (await res.json().catch(() => ({}))) as {
+					error?: string;
+					code?: string;
+					balance?: number;
+					transaction?: Transaction;
+					report?: RichAnalysisReport;
+				};
+
+				if (res.status === 402) return "insufficient";
+
+				// Списание прошло, но генерация упала — баланс/операция актуальны,
+				// идею помечаем неуспешной, чтобы показать состояние ошибки.
+				if (res.status === 502 && data.code === "generation") {
+					if (typeof data.balance === "number") setBalance(data.balance);
+					if (data.transaction) {
+						const tx = data.transaction;
+						setTransactions((prev) => [tx, ...prev]);
+					}
+					setIdeas((prev) =>
+						prev.map((i) =>
+							i.id === id ? { ...i, analysisStatus: "failed" } : i,
+						),
+					);
+					showToast(data.error ?? "Анализ не удался", "error");
+					return "error";
+				}
+
+				if (!res.ok || !data.report || typeof data.balance !== "number") {
 					showToast(
 						data.error ?? "Не удалось запустить анализ",
 						"error",
 					);
 					return "error";
 				}
-				const { balance: newBalance, transaction } = (await res.json()) as {
-					balance: number;
-					transaction: Transaction;
-				};
-				setBalance(newBalance);
-				setTransactions((prev) => [transaction, ...prev]);
+
+				const report = data.report;
+				const tx = data.transaction;
+				setBalance(data.balance);
+				if (tx) setTransactions((prev) => [tx, ...prev]);
+				setIdeas((prev) =>
+					prev.map((i) =>
+						i.id === id
+							? {
+									...i,
+									report,
+									score: report.score,
+									hasAnalysis: true,
+									analysisStatus: "ok",
+								}
+							: i,
+					),
+				);
 				return "ok";
 			} catch {
 				showToast("Сеть недоступна — попробуйте позже", "error");
@@ -393,15 +428,6 @@ export function IdeasDemoProvider({
 		},
 		[balance, showToast],
 	);
-
-	/** Помечает идею проанализированной локально (баланс уже списан сервером). */
-	const markIdeaAnalyzed = useCallback((id: string, score: number) => {
-		setIdeas((prev) =>
-			prev.map((i) =>
-				i.id === id ? { ...i, hasAnalysis: true, score } : i,
-			),
-		);
-	}, []);
 
 	/**
 	 * Запрашивает бесплатную идею дня из каталога. Лимит и отсутствие повторов
@@ -503,7 +529,6 @@ export function IdeasDemoProvider({
 		deleteIdea,
 		setIdeaArchived,
 		analyzeIdea,
-		markIdeaAnalyzed,
 		addCatalogIdea,
 		addAnamnesisIdeas,
 		filteredIdeas,

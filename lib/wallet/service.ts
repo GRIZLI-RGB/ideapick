@@ -4,9 +4,7 @@ import { randomUUID } from "node:crypto";
 import { and, desc, eq, sql } from "drizzle-orm";
 import { db } from "@/drizzle";
 import { idea, payment, user, walletTransaction } from "@/drizzle/schema";
-import { buildRichMockReport } from "@/lib/analysis/rich-mock";
 import { PRICES } from "@/lib/ideas/constants";
-import { toClientIdea } from "@/lib/ideas/service";
 import { calcTopUpBonus, TOP_UP_MAX, TOP_UP_MIN } from "@/lib/wallet/bonus";
 import type { Transaction, TransactionKind } from "@/lib/wallet/types";
 import {
@@ -287,9 +285,12 @@ export type AnalysisChargeMode = "initial" | "update";
 
 export type AnalysisChargeResult = {
 	ideaId: string;
-	score: number;
 	balance: number;
 	transaction: Transaction;
+	/** Данные идеи для генерации отчёта нейросетью. */
+	idea: { id: string; userId: string; title: string; description: string };
+	/** Номер запуска: 1 — первый, +1 на каждое обновление. */
+	version: number;
 };
 
 /**
@@ -330,6 +331,10 @@ export async function chargeForAnalysis({
 		if (mode === "initial" && ideaRow.hasAnalysis) {
 			throw new AnalysisAlreadyChargedError();
 		}
+		// Анализ уже выполняется (другой запрос в полёте) — не списываем повторно.
+		if (ideaRow.analysisStatus === "pending") {
+			throw new AnalysisAlreadyChargedError();
+		}
 
 		const [u] = await tx
 			.select({ balance: user.balance })
@@ -339,17 +344,19 @@ export async function chargeForAnalysis({
 
 		if (!u || u.balance < price) throw new InsufficientFundsError();
 
-		const score = buildRichMockReport(toClientIdea(ideaRow)).score;
 		const newBalance = u.balance - price;
+		const version =
+			mode === "update" ? (ideaRow.analysisReport?.version ?? 1) + 1 : 1;
 
 		await tx
 			.update(user)
 			.set({ balance: sql`${user.balance} - ${price}` })
 			.where(eq(user.id, userId));
 
+		// Помечаем запуск анализа; отчёт и score проставит роут после генерации.
 		await tx
 			.update(idea)
-			.set({ hasAnalysis: true, score, updatedAt: new Date() })
+			.set({ analysisStatus: "pending", updatedAt: new Date() })
 			.where(eq(idea.id, ideaId));
 
 		const txId = randomUUID();
@@ -368,8 +375,14 @@ export async function chargeForAnalysis({
 
 		return {
 			ideaId,
-			score,
 			balance: newBalance,
+			version,
+			idea: {
+				id: ideaRow.id,
+				userId: ideaRow.userId,
+				title: ideaRow.title,
+				description: ideaRow.description,
+			},
 			transaction: {
 				id: txId,
 				kind: "analysis",

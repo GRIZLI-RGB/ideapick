@@ -1,3 +1,8 @@
+import type { RichAnalysisReport } from "@/lib/analysis/rich-types";
+
+/** Статус последнего запуска анализа. null — анализ не запускался. */
+export type IdeaAnalysisStatus = "pending" | "ok" | "failed" | null;
+
 export type Idea = {
 	id: string;
 	title: string;
@@ -7,6 +12,10 @@ export type Idea = {
 	hasAnalysis: boolean;
 	/** Архивная идея скрыта из основного списка, но не удалена. */
 	archived: boolean;
+	/** Полный отчёт последнего анализа; null/undefined — отчёта ещё нет. */
+	report?: RichAnalysisReport | null;
+	/** Статус последнего запуска анализа (для отображения ошибки/прогресса). */
+	analysisStatus?: IdeaAnalysisStatus;
 };
 
 /** «all» и «pending» — только активные идеи; архив — отдельный срез. */

@@ -4,6 +4,7 @@ import { randomUUID } from "node:crypto";
 import { and, desc, eq } from "drizzle-orm";
 import { db } from "@/drizzle";
 import { idea } from "@/drizzle/schema";
+import type { RichAnalysisReport } from "@/lib/analysis/rich-types";
 import type { Idea } from "@/lib/ideas/types";
 import {
 	IDEA_DESCRIPTION_MAX,
@@ -25,6 +26,8 @@ export function toClientIdea(row: typeof idea.$inferSelect): Idea {
 		createdAt: row.createdAt.toISOString(),
 		hasAnalysis: row.hasAnalysis,
 		archived: row.archivedAt !== null,
+		report: row.analysisReport ?? null,
+		analysisStatus: (row.analysisStatus ?? null) as Idea["analysisStatus"],
 	};
 }
 
@@ -127,6 +130,45 @@ export async function setIdeaArchived({
 		.returning();
 
 	return row ? toClientIdea(row) : null;
+}
+
+/**
+ * Сохраняет успешный отчёт анализа: отчёт, балл, статус «ok». Вызывается
+ * роутом после генерации (списание уже выполнено в chargeForAnalysis).
+ */
+export async function saveAnalysisResult({
+	userId,
+	ideaId,
+	report,
+}: {
+	userId: string;
+	ideaId: string;
+	report: RichAnalysisReport;
+}): Promise<void> {
+	await db
+		.update(idea)
+		.set({
+			analysisReport: report,
+			score: report.score,
+			hasAnalysis: true,
+			analysisStatus: "ok",
+			updatedAt: new Date(),
+		})
+		.where(and(eq(idea.id, ideaId), eq(idea.userId, userId)));
+}
+
+/** Помечает запуск анализа неуспешным (генерация упала после списания). */
+export async function markAnalysisFailed({
+	userId,
+	ideaId,
+}: {
+	userId: string;
+	ideaId: string;
+}): Promise<void> {
+	await db
+		.update(idea)
+		.set({ analysisStatus: "failed", updatedAt: new Date() })
+		.where(and(eq(idea.id, ideaId), eq(idea.userId, userId)));
 }
 
 /** Получает одну идею пользователя (или null). */
