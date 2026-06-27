@@ -71,6 +71,13 @@
       "when": 1782561733786,
       "tag": "0009_useful_longshot",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1782566898261,
+      "tag": "0010_fast_llm_flash_no_thinking",
+      "breakpoints": true
     }
   ]
 }

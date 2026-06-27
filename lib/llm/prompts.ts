@@ -80,8 +80,9 @@ const DEFAULT_USER_PROMPT = `Оцени бизнес-идею.
 export const DEFAULT_ANALYSIS_TEMPLATE: PromptTemplateConfig = {
 	key: ANALYSIS_TEMPLATE_KEY,
 	name: "Анализ идеи (по умолчанию)",
-	model: "deepseek-v4-pro",
-	thinking: true,
+	// Быстрая модель без режима рассуждений: минимальная задержка ответа.
+	model: "deepseek-v4-flash",
+	thinking: false,
 	temperature: 40,
 	maxTokens: 8000,
 	systemPrompt: DEFAULT_SYSTEM_PROMPT,
@@ -160,8 +161,9 @@ const DEFAULT_ANAMNESIS_USER_PROMPT = `Подбери одну наиболее 
 export const DEFAULT_ANAMNESIS_TEMPLATE: PromptTemplateConfig = {
 	key: ANAMNESIS_TEMPLATE_KEY,
 	name: "Генерация идеи по анамнезу",
-	model: "deepseek-v4-pro",
-	thinking: true,
+	// Быстрая модель без режима рассуждений: минимальная задержка ответа.
+	model: "deepseek-v4-flash",
+	thinking: false,
 	temperature: 90,
 	maxTokens: 2000,
 	systemPrompt: DEFAULT_ANAMNESIS_SYSTEM_PROMPT,
