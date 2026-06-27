@@ -3,6 +3,10 @@ import { listPublishedSlugs } from "@/lib/blog/service";
 
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://ideapick.ru";
 
+// Карта сайта читает статьи из БД, которой нет на этапе сборки — генерируем
+// её в рантайме.
+export const dynamic = "force-dynamic";
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 	const lastModified = new Date();
 

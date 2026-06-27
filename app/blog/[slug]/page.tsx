@@ -8,17 +8,11 @@ import { LandingFooter } from "@/components/landing-v2/landing-footer";
 import { SitePageBackdrop } from "@/components/site/site-page-backdrop";
 import { formatArticleDate } from "@/lib/blog/format";
 import { buildArticleJsonLd } from "@/lib/blog/json-ld";
-import {
-	getPublishedArticle,
-	listPublishedSlugs,
-} from "@/lib/blog/service";
+import { getPublishedArticle } from "@/lib/blog/service";
 
-export const revalidate = 300;
-
-export async function generateStaticParams() {
-	const slugs = await listPublishedSlugs();
-	return slugs.map(({ slug }) => ({ slug }));
-}
+// Рендер на лету: контент и БД доступны в рантайме (на сборке БД нет).
+// Для поисковиков это полноценный SSR — индексации не мешает.
+export const dynamic = "force-dynamic";
 
 type PageProps = {
 	params: Promise<{ slug: string }>;

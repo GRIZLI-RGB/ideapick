@@ -29,8 +29,8 @@ export const metadata: Metadata = {
 	},
 };
 
-// Лента опубликованных статей; обновляется при публикации (revalidate).
-export const revalidate = 300;
+// Рендер на лету: на этапе сборки БД недоступна, данные читаются в рантайме.
+export const dynamic = "force-dynamic";
 
 export default async function BlogIndexPage() {
 	const articles = await listPublishedArticles();
