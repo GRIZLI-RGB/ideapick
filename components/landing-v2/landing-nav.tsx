@@ -9,6 +9,7 @@ const NAV_LINKS = [
 	{ href: "#how",     label: "Как это работает" },
 	{ href: "#example", label: "Пример отчёта" },
 	{ href: "#pricing", label: "Стоимость" },
+	{ href: "/blog",    label: "Блог" },
 	{ href: "#faq",     label: "Вопрос-ответ" },
 ];
 

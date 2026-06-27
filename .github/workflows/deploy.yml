@@ -60,6 +60,13 @@ jobs:
           ssh -i ~/.ssh/deploy_key -fN -L 15432:127.0.0.1:5432 "$SERVER_USER@$SERVER_HOST"
           DATABASE_URL="postgres://ideapick:${{ secrets.DB_PASSWORD }}@127.0.0.1:15432/ideapick" pnpm db:migrate
 
+      # Стартовые статьи блога. Скрипт пропускает уже существующие слаги,
+      # поэтому правки из админки на повторных деплоях не затираются.
+      - name: Seed blog articles
+        run: |
+          ssh -i ~/.ssh/deploy_key -fN -L 15433:127.0.0.1:5432 "$SERVER_USER@$SERVER_HOST"
+          DATABASE_URL="postgres://ideapick:${{ secrets.DB_PASSWORD }}@127.0.0.1:15433/ideapick" pnpm exec tsx scripts/seed-articles.ts
+
       - name: Restart app
         run: |
           ssh -i ~/.ssh/deploy_key "$SERVER_USER@$SERVER_HOST" \

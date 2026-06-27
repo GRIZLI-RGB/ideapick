@@ -1,9 +1,20 @@
 import type { MetadataRoute } from "next";
+import { listPublishedSlugs } from "@/lib/blog/service";
 
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://ideapick.ru";
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 	const lastModified = new Date();
+
+	const articles = await listPublishedSlugs();
+	const articleEntries: MetadataRoute.Sitemap = articles.map(
+		({ slug, updatedAt }) => ({
+			url: `${BASE_URL}/blog/${slug}`,
+			lastModified: updatedAt,
+			changeFrequency: "monthly",
+			priority: 0.7,
+		}),
+	);
 
 	return [
 		{
@@ -12,6 +23,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
 			changeFrequency: "weekly",
 			priority: 1,
 		},
+		{
+			url: `${BASE_URL}/blog`,
+			lastModified,
+			changeFrequency: "daily",
+			priority: 0.8,
+		},
+		...articleEntries,
 		{
 			url: `${BASE_URL}/terms`,
 			lastModified,

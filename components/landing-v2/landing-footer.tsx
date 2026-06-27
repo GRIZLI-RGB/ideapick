@@ -5,6 +5,7 @@ import { Mail, Phone } from "lucide-react";
 const SUPPORT_EMAIL = "support@ideapick.ru";
 
 const FOOTER_LINKS = [
+	{ href: "/blog", label: "Блог" },
 	{ href: "/terms", label: "Условия использования" },
 	{ href: "/privacy", label: "Конфиденциальность" },
 ];

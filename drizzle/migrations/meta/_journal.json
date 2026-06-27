@@ -64,6 +64,13 @@
       "when": 1781433661392,
       "tag": "0008_tearful_rogue",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1782561733786,
+      "tag": "0009_useful_longshot",
+      "breakpoints": true
     }
   ]
 }

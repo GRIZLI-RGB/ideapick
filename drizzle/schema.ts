@@ -290,6 +290,41 @@ export const promptTemplate = pgTable(
 );
 
 /**
+ * Статья блога. Создаётся и редактируется из админ-панели (/admin/articles),
+ * публичная часть — /blog и /blog/[slug]. Контент хранится в Markdown.
+ *
+ * Индексируется поисковиками только при `status = 'published'` и заданном
+ * `publishedAt`. `readingMinutes` считается при сохранении из объёма текста.
+ */
+export const article = pgTable(
+	"article",
+	{
+		id: text("id").primaryKey(),
+		// Человекочитаемый идентификатор в URL (/blog/<slug>), транслит.
+		slug: text("slug").notNull().unique(),
+		title: text("title").notNull(),
+		// Короткий анонс: карточки в ленте + запасное SEO-описание.
+		excerpt: text("excerpt").notNull(),
+		// Тело статьи в Markdown.
+		content: text("content").notNull(),
+		// Рубрика для «eyebrow» и группировки (необязательно).
+		category: text("category"),
+		// Необязательный URL обложки; если пусто — OG-картинка генерируется.
+		coverImage: text("cover_image"),
+		// Переопределения для <title> и meta description (если заданы).
+		seoTitle: text("seo_title"),
+		seoDescription: text("seo_description"),
+		// draft | published
+		status: text("status").notNull().default("draft"),
+		readingMinutes: integer("reading_minutes").notNull().default(1),
+		publishedAt: timestamp("published_at"),
+		createdAt: timestamp("created_at").notNull().defaultNow(),
+		updatedAt: timestamp("updated_at").notNull().defaultNow(),
+	},
+	(table) => [index("article_status_idx").on(table.status, table.publishedAt)],
+);
+
+/**
  * Журнал обращений к нейросети. Пишется на каждый запрос анализа (успех и
  * ошибка). Хранит промпт, ответ, токены и расчётную стоимость для админ-панели.
  *
