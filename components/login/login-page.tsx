@@ -238,6 +238,8 @@ export function LoginPage() {
 		sent,
 		error,
 		signInWithGoogle,
+		signInWithYandex,
+		signInWithTelegram,
 		sendMagicLink,
 		resetMagicLink,
 	} = useAuth();
@@ -291,6 +293,8 @@ export function LoginPage() {
 				sent={sent}
 				error={error}
 				onGoogle={signInWithGoogle}
+				onYandex={signInWithYandex}
+				onTelegram={signInWithTelegram}
 				onMagic={handleMagic}
 				onResetMagic={resetMagicLink}
 			/>

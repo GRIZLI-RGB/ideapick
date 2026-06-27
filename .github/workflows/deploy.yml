@@ -33,6 +33,9 @@ jobs:
         run: pnpm build
         env:
           NEXT_PUBLIC_APP_URL: https://ideapick.ru
+          # Публичный числовой id Telegram-бота (часть токена до ":"), вшивается
+          # в клиентский бандл на этапе сборки. Не секрет.
+          NEXT_PUBLIC_TELEGRAM_BOT_ID: "8908705537"
 
       - name: Prepare bundle
         run: |

@@ -6,19 +6,27 @@ import { GoogleIcon } from "@/components/login/google-icon";
 import type { LoginPanelBackground } from "@/components/login/login-panel-backgrounds";
 import { LOGIN_PANEL_DEFAULT } from "@/components/login/login-panel-backgrounds";
 import { LOGIN_AUTH_THEME } from "@/components/login/login-theme";
+import {
+	TelegramIcon,
+	YandexIcon,
+} from "@/components/login/provider-icons";
 import { AnimatePresence, motion } from "framer-motion";
 import { Check, Loader2, Mail } from "lucide-react";
 
 const LOGO_SIZE = 48;
 
+type LoadingProvider = "google" | "yandex" | "telegram" | "magic";
+
 type LoginRightPanelProps = {
 	panel?: LoginPanelBackground;
 	email: string;
 	setEmail: (v: string) => void;
-	loading: "google" | "magic" | null;
+	loading: LoadingProvider | null;
 	sent: boolean;
 	error?: string | null;
 	onGoogle: () => void;
+	onYandex: () => void;
+	onTelegram: () => void;
 	onMagic: (e: React.FormEvent) => void;
 	onResetMagic: () => void;
 };
@@ -31,6 +39,8 @@ export function LoginRightPanel({
 	sent,
 	error = null,
 	onGoogle,
+	onYandex,
+	onTelegram,
 	onMagic,
 	onResetMagic,
 }: LoginRightPanelProps) {
@@ -80,7 +90,39 @@ export function LoginRightPanel({
 						) : (
 							<GoogleIcon className="size-5" />
 						)}
-						Продолжить с Google
+						Войти через Google
+					</button>
+
+					<button
+						type="button"
+						onClick={onYandex}
+						disabled={loading !== null}
+						className={`flex w-full cursor-pointer items-center justify-center gap-3 rounded-xl border px-4 py-3 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-60 ${m.googleBtn}`}
+					>
+						{loading === "yandex" ? (
+							<Loader2
+								className={`size-5 animate-spin ${m.muted}`}
+							/>
+						) : (
+							<YandexIcon className="size-5" />
+						)}
+						Войти через Yandex
+					</button>
+
+					<button
+						type="button"
+						onClick={onTelegram}
+						disabled={loading !== null}
+						className={`flex w-full cursor-pointer items-center justify-center gap-3 rounded-xl border px-4 py-3 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-60 ${m.googleBtn}`}
+					>
+						{loading === "telegram" ? (
+							<Loader2
+								className={`size-5 animate-spin ${m.muted}`}
+							/>
+						) : (
+							<TelegramIcon className="size-5" />
+						)}
+						Войти через Telegram
 					</button>
 
 					<div className="flex items-center gap-3 py-1">
